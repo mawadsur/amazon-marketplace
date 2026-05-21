@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { enqueuePayouts } from "@/lib/payouts";
 import { stripeRefund } from "@/lib/stubs";
 import { getQueue } from "@/lib/queue";
+import { createBuyerProtection } from "@/lib/buyer-protection";
 
 export type MarkCapturedInput = {
   orderId: string;
@@ -41,9 +42,14 @@ export async function markPaymentCaptured(input: MarkCapturedInput): Promise<voi
     }),
   ]);
 
-  // Side-effect: create per-shop payouts. Failures here should NOT roll back
-  // the capture (the payment is real); admin can retry payouts separately.
+  // Side-effects after capture. Failures here should NOT roll back the
+  // capture (the payment is real); admin can retry these out of band.
   await enqueuePayouts(order.id);
+  try {
+    await createBuyerProtection(order.id);
+  } catch {
+    /* protection creation is best-effort */
+  }
 }
 
 export type RefundInput = { orderId: string; reason?: string };

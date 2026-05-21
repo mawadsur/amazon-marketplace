@@ -139,6 +139,9 @@ model Shop {
   bannerUrl   String?    @map("banner_url")
   status      ShopStatus @default(PENDING_REVIEW)
   badge       VerificationBadge @default(NEW)
+  /// 0-100 Trust Engine score (D6). Recomputed from KYC + reviews +
+  /// dispute rate + sales velocity. Default 50 (neutral, no signal yet).
+  trustScore  Int        @default(50) @map("trust_score")
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
   approvedAt  DateTime?  @map("approved_at")
@@ -424,11 +427,12 @@ model Order {
   completedAt       DateTime?   @map("completed_at")
   cancelledAt       DateTime?   @map("cancelled_at")
 
-  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  items    OrderItem[]
-  payment  Payment?
-  shipment Shipment?
-  dispute  Dispute?
+  buyer       User              @relation("BuyerOrders", fields: [buyerId], references: [id])
+  items       OrderItem[]
+  payment     Payment?
+  shipment    Shipment?
+  dispute     Dispute?
+  protection  BuyerProtection?
 
   @@index([buyerId, status])
   @@index([status, placedAt])
@@ -557,6 +561,33 @@ model Dispute {
 
   @@index([status])
   @@map("disputes")
+}
+
+enum BuyerProtectionStatus {
+  ELIGIBLE
+  CLAIMED
+  PAID
+  DENIED
+}
+
+/// Buyer Protection (D6): every paid order gets an auto-created coverage row,
+/// capped at the lesser of total + a max. When a buyer claims (via dispute or
+/// directly) it flips to CLAIMED; admin resolves into PAID/DENIED. This is the
+/// MVP — pool is self-funded until a real insurance partner is wired.
+model BuyerProtection {
+  id                String                @id @default(cuid())
+  orderId           String                @unique @map("order_id")
+  status            BuyerProtectionStatus @default(ELIGIBLE)
+  coverageUsdCents  Int                   @map("coverage_usd_cents")
+  claimedAt         DateTime?             @map("claimed_at")
+  resolvedAt        DateTime?             @map("resolved_at")
+  resolution        String?               @db.Text
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("buyer_protection")
 }
 
 model FraudSignal {

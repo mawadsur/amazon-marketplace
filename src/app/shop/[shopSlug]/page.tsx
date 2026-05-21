@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductCard } from "@/components/buyer/product-card";
+import { VerificationBadge } from "@/components/safety/verification-badge";
+import { TrustScoreBadge } from "@/components/safety/trust-score-badge";
 import { getShopBySlug, regionNameToSlug } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
@@ -44,11 +46,10 @@ export default async function ShopPage(props: { params: Promise<{ shopSlug: stri
                 </Link>
               </p>
             </div>
-            {shop.badge !== "NONE" ? (
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
-                {shop.badge.replace("_", " ").toLowerCase()}
-              </span>
-            ) : null}
+            <div className="flex items-center gap-2">
+              <VerificationBadge value={shop.badge} hideIfNone />
+              <TrustScoreBadge score={shop.trustScore} />
+            </div>
           </div>
 
           {shop.bio ? (

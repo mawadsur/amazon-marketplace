@@ -5,6 +5,7 @@
 
 import { prisma } from "@/lib/db";
 import { enqueueRefund } from "@/lib/payments";
+import { claimBuyerProtection, resolveBuyerProtection } from "@/lib/buyer-protection";
 import type {
   Dispute,
   DisputeReason,
@@ -52,8 +53,8 @@ export async function openDispute(input: OpenDisputeInput): Promise<Dispute> {
     .map((u) => u.trim())
     .filter((u) => u.length > 0);
 
-  return prisma.$transaction(async (tx) => {
-    const dispute = await tx.dispute.create({
+  const dispute = await prisma.$transaction(async (tx) => {
+    const d = await tx.dispute.create({
       data: {
         orderId: input.orderId,
         openedById: input.buyerId,
@@ -67,8 +68,18 @@ export async function openDispute(input: OpenDisputeInput): Promise<Dispute> {
       where: { id: input.orderId },
       data: { status: "DISPUTED" },
     });
-    return dispute;
+    return d;
   });
+
+  // Flip BuyerProtection to CLAIMED outside the TX so a failure here doesn't
+  // block dispute opening. Best-effort.
+  try {
+    await claimBuyerProtection(input.orderId);
+  } catch {
+    /* ignore */
+  }
+
+  return dispute;
 }
 
 // ---------------------------------------------------------------- resolve
@@ -144,14 +155,24 @@ export async function resolveDispute(input: ResolveDisputeInput): Promise<Disput
 
     return updated;
   }).then(async (updated) => {
-    // Enqueue the refund — the payments.refund worker handles the Stripe call
-    // with exponential backoff (5 attempts). Stuck refunds surface as Orders
-    // where status=REFUNDED but payment.status=CAPTURED.
+    // Side-effects outside the TX. Each is best-effort — none should roll
+    // back the resolution. Admins can retry from /admin/orders/[id] if needed.
     if (input.outcome === "BUYER") {
       try {
         await enqueueRefund({ orderId: dispute.orderId, reason: resolution });
       } catch {
-        /* enqueue failure is non-fatal — admin can manually retry */
+        /* refund retried by the payments.refund worker */
+      }
+      try {
+        await resolveBuyerProtection(dispute.orderId, "PAID", resolution);
+      } catch {
+        /* protection resolution is best-effort */
+      }
+    } else {
+      try {
+        await resolveBuyerProtection(dispute.orderId, "DENIED", resolution);
+      } catch {
+        /* ignore */
       }
     }
     return updated;
