@@ -16,9 +16,9 @@ Critical gaps that surfaced in the review and were greenlit. All four shipped 20
 
 ## P1 — Foundation Hardening (accepted 2026-05-21)
 
-- [ ] **Baseline test coverage** (~3 days CC, see [D11]) — Vitest unit tests for pure-function libs first (`fees`, `format`, `payouts`, `badges`, `fraud`). Playwright E2E for the seven module happy paths. CI gate on green.
-- [ ] **Sentry instrumentation** (~30 min CC, see [D12]) — `@sentry/nextjs` for web, `@sentry/node` for worker. Wire DSN to env. Source maps uploaded in build.
-- [ ] **Production deploy target** (see [D13]) — Vercel (web) + Fly.io (worker) + Neon (Postgres) + Upstash (Redis). Wire CI deploy on tag.
+- [x] **Baseline test coverage** — 2026-05-21. Vitest with vite-tsconfig-paths. 5 test files / 38 tests for `fees`, `format`, `customs`, `trust-score`, `concierge`. Playwright E2E still TODO — needs a running stack.
+- [x] **Sentry instrumentation** — 2026-05-21. `@sentry/nextjs` wraps the Next.js build via `withSentryConfig`. `instrumentation.ts` + 3 runtime config files (server/client/edge). Worker `src/workers/ai.ts` calls `Sentry.init` at top + captures exceptions on `worker.on('failed')` with queue + jobId tags. All paths no-op when `SENTRY_DSN` unset.
+- [x] **Production deploy target** — config landed 2026-05-21. `vercel.json` (security headers + iad1 region) for the web app. `Dockerfile` + `.dockerignore` + `fly.toml` for the BullMQ worker. README has step-by-step deploy guide (Neon → Upstash → Vercel env → Fly secrets → Sentry). CI deploy-on-tag still TODO.
 - [ ] **Migrate `db:push` → `db:migrate`** (~15 min CC) — generate the initial migration; switch dev workflow; document in README.
 - [ ] **PgBouncer / Prisma connection pooling** — set up before first 50 concurrent users. Neon includes this by default; verify.
 

@@ -1,0 +1,28 @@
+# Fly.io config for the BullMQ worker process.
+# Deploy:  fly launch --name marketplace-worker --no-deploy
+#          fly secrets set DATABASE_URL=... REDIS_URL=... ANTHROPIC_API_KEY=... ...
+#          fly deploy
+#
+# The web app deploys separately to Vercel; this only runs the worker.
+
+app = "marketplace-worker"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[env]
+  NODE_ENV = "production"
+  # SENTRY_DSN, DATABASE_URL, REDIS_URL etc. should be set via `fly secrets`.
+
+# No services / ports — the worker only consumes BullMQ jobs over Redis.
+# No HTTP health checks; Fly will restart the VM if the process exits.
+[processes]
+  worker = "node --import tsx/esm src/workers/ai.ts"
+
+[deploy]
+  strategy = "immediate"
