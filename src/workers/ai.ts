@@ -13,9 +13,18 @@
 // Run from project root: `npm run dev:worker`
 // Env is expected to be set in the shell (or via `node --env-file=.env`).
 
+import * as Sentry from "@sentry/node";
 import type { AiJob, Product } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { makeWorker, type QueueName } from "@/lib/queue";
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+  });
+}
 import {
   removeBackground,
   aiGenerateDescription,
@@ -249,6 +258,11 @@ workers[1]?.on("completed", async (job) => {
 for (const w of workers) {
   w.on("failed", (job, err) => {
     console.error(`[worker] ${w.name} job ${job?.id} failed:`, err.message);
+    if (process.env.SENTRY_DSN) {
+      Sentry.captureException(err, {
+        tags: { queue: w.name, jobId: job?.id ?? "unknown" },
+      });
+    }
   });
 }
 

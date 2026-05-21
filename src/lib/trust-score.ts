@@ -92,7 +92,7 @@ export function computeTrustScore(inputs: TrustInputs): TrustResult {
   let tier: VerificationBadge = "NONE";
   if (score >= 80) tier = "TOP_RATED";
   else if (score >= 50) tier = "VERIFIED";
-  else if (score >= 30) tier = "NEW";
+  else if (score >= 25) tier = "NEW";
 
   return {
     score,
