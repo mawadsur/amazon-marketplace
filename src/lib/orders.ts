@@ -1,0 +1,209 @@
+// Order lifecycle helpers: create from cart (transactional snapshot), and
+// fetch helpers for buyer + seller surfaces. Pricing/fees are computed via
+// src/lib/fees.ts; FX comes from src/lib/stubs.ts. No external I/O here.
+
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { FX_USD_TO_INR, usdCentsToInrPaise } from "@/lib/stubs";
+import {
+  flatShippingUsdCents,
+  totalUsdCents,
+} from "@/lib/fees";
+
+export type ShippingAddress = {
+  fullName: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+};
+
+export type CreateOrderInput = {
+  userId: string;
+  shippingAddress: ShippingAddress;
+  fxRate?: number;
+};
+
+export type CreateOrderResult = {
+  orderId: string;
+  totalUsdCents: number;
+};
+
+/**
+ * Convert a user's cart into a placed Order in a single DB transaction:
+ *   - snapshot per-line USD + INR prices into OrderItem (incl. shopId for splits)
+ *   - create the Payment row (PENDING)
+ *   - clear the cart
+ *
+ * Throws "CART_EMPTY" if there is nothing to order. Throws "PRODUCT_UNAVAILABLE"
+ * if any cart line points at a non-published product (defensive — cart.ts
+ * guards on add, but listings can be unpublished after the fact).
+ */
+export async function createOrderFromCart(
+  input: CreateOrderInput,
+): Promise<CreateOrderResult> {
+  const fxRate = input.fxRate ?? FX_USD_TO_INR;
+
+  // Read outside the transaction to keep the TX short; re-validate inside.
+  const cart = await prisma.cart.findUnique({
+    where: { userId: input.userId },
+    include: {
+      items: {
+        include: { product: { select: { id: true, status: true, shopId: true, priceUsdCents: true } } },
+      },
+    },
+  });
+  if (!cart || cart.items.length === 0) throw new Error("CART_EMPTY");
+  for (const it of cart.items) {
+    if (it.product.status !== "PUBLISHED") throw new Error("PRODUCT_UNAVAILABLE");
+  }
+
+  let subtotal = 0;
+  for (const it of cart.items) subtotal += it.qty * it.product.priceUsdCents;
+  const shipping = flatShippingUsdCents();
+  const total = totalUsdCents(subtotal);
+
+  // Single TX so cart-clear + order create are atomic.
+  const order = await prisma.$transaction(async (tx) => {
+    const created = await tx.order.create({
+      data: {
+        buyerId: input.userId,
+        status: "PLACED",
+        currency: "USD",
+        subtotalUsdCents: subtotal,
+        shippingUsdCents: shipping,
+        feesUsdCents: 0,
+        totalUsdCents: total,
+        fxRate: new Prisma.Decimal(fxRate),
+        shippingAddress: input.shippingAddress as unknown as Prisma.InputJsonValue,
+        items: {
+          create: cart.items.map((it) => ({
+            productId: it.product.id,
+            shopId: it.product.shopId,
+            qty: it.qty,
+            unitPriceUsdCents: it.product.priceUsdCents,
+            unitPriceInrPaise: usdCentsToInrPaise(it.product.priceUsdCents),
+          })),
+        },
+        payment: {
+          create: {
+            provider: "stripe",
+            status: "PENDING",
+            amountUsdCents: total,
+          },
+        },
+      },
+      select: { id: true, totalUsdCents: true },
+    });
+
+    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+    return created;
+  });
+
+  return { orderId: order.id, totalUsdCents: order.totalUsdCents };
+}
+
+const buyerOrderInclude = {
+  items: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          images: { orderBy: { position: "asc" as const }, take: 1, select: { url: true } },
+          shop: { select: { name: true, slug: true } },
+        },
+      },
+    },
+  },
+  payment: true,
+} satisfies Prisma.OrderInclude;
+
+export async function getOrderForBuyer(userId: string, orderId: string) {
+  return prisma.order.findFirst({
+    where: { id: orderId, buyerId: userId },
+    include: buyerOrderInclude,
+  });
+}
+
+export async function getOrdersForBuyer(userId: string) {
+  return prisma.order.findMany({
+    where: { buyerId: userId },
+    orderBy: { placedAt: "desc" },
+    include: buyerOrderInclude,
+  });
+}
+
+const sellerOrderInclude = {
+  items: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          images: { orderBy: { position: "asc" as const }, take: 1, select: { url: true } },
+        },
+      },
+    },
+  },
+  payment: { select: { status: true } },
+  buyer: { select: { name: true, email: true } },
+} satisfies Prisma.OrderInclude;
+
+/** Returns the order ONLY if at least one item belongs to the seller's shop. */
+export async function getOrderForSeller(userId: string, orderId: string) {
+  const shop = await prisma.shop.findUnique({
+    where: { ownerId: userId },
+    select: { id: true },
+  });
+  if (!shop) return null;
+
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, items: { some: { shopId: shop.id } } },
+    include: sellerOrderInclude,
+  });
+  if (!order) return null;
+
+  // Hide other shops' items from this seller's view.
+  return {
+    ...order,
+    shopId: shop.id,
+    items: order.items.filter((it) => it.shopId === shop.id),
+  };
+}
+
+export async function getOrdersForSeller(userId: string) {
+  const shop = await prisma.shop.findUnique({
+    where: { ownerId: userId },
+    select: { id: true },
+  });
+  if (!shop) return { shopId: null as string | null, orders: [] as Awaited<ReturnType<typeof listOrdersForShop>> };
+
+  const orders = await listOrdersForShop(shop.id);
+  return { shopId: shop.id, orders };
+}
+
+async function listOrdersForShop(shopId: string) {
+  return prisma.order.findMany({
+    where: { items: { some: { shopId } }, status: { not: "PLACED" } },
+    orderBy: { placedAt: "desc" },
+    include: {
+      items: {
+        where: { shopId },
+        select: {
+          id: true,
+          qty: true,
+          unitPriceUsdCents: true,
+          product: { select: { id: true, slug: true, title: true } },
+        },
+      },
+      payment: { select: { status: true } },
+      buyer: { select: { name: true, email: true } },
+    },
+  });
+}

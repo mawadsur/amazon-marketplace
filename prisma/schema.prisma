@@ -1,0 +1,594 @@
+// Prisma schema — US↔India marketplace MVP
+// Covers all 7 MVP modules. Field names are SQL-friendly snake_case via @map.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTH (NextAuth-compatible) + ROLES
+// ============================================================================
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  phone         String?   @unique
+  phoneVerified DateTime? @map("phone_verified")
+  name          String?
+  image         String?
+  role          UserRole  @default(BUYER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  shop          Shop?
+  orders        Order[]         @relation("BuyerOrders")
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  cart          Cart?
+  disputesOpened Dispute[]      @relation("DisputeOpener")
+  adminActions  AdminAction[]
+  fraudSignals  FraudSignal[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// One-time codes for phone OTP (seller onboarding)
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@map("otp_codes")
+}
+
+// ============================================================================
+// MODULE 1 — Seller / Shop
+// ============================================================================
+
+enum ShopStatus {
+  PENDING_REVIEW
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum KycStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum VerificationBadge {
+  NONE
+  NEW
+  VERIFIED
+  TOP_RATED
+}
+
+model Shop {
+  id          String     @id @default(cuid())
+  ownerId     String     @unique @map("owner_id")
+  name        String
+  slug        String     @unique
+  bio         String?    @db.Text
+  story       String?    @db.Text
+  city        String
+  region      String     // Indian state/region
+  category    String     // top-level: handicrafts / textiles / jewelry
+  languages   String[]   // e.g. ["en","hi","ta"]
+  logoUrl     String?    @map("logo_url")
+  bannerUrl   String?    @map("banner_url")
+  status      ShopStatus @default(PENDING_REVIEW)
+  badge       VerificationBadge @default(NEW)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  approvedAt  DateTime?  @map("approved_at")
+
+  owner       User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  kyc         ShopKyc?
+  bank        BankAccount?
+  products    Product[]
+  payouts     Payout[]
+
+  @@index([status])
+  @@index([category, region])
+  @@map("shops")
+}
+
+model ShopKyc {
+  id            String    @id @default(cuid())
+  shopId        String    @unique @map("shop_id")
+  gstNumber     String?   @map("gst_number")
+  panNumber     String?   @map("pan_number")
+  udyamNumber   String?   @map("udyam_number")
+  evidenceUrls  String[]  @map("evidence_urls")
+  status        KycStatus @default(NOT_SUBMITTED)
+  submittedAt   DateTime? @map("submitted_at")
+  verifiedAt    DateTime? @map("verified_at")
+  rejectionNote String?   @map("rejection_note") @db.Text
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("shop_kyc")
+}
+
+model BankAccount {
+  id                  String   @id @default(cuid())
+  shopId              String   @unique @map("shop_id")
+  razorpayContactId   String?  @map("razorpay_contact_id")
+  razorpayFundAccountId String? @map("razorpay_fund_account_id")
+  accountHolderName   String   @map("account_holder_name")
+  accountNumberLast4  String   @map("account_number_last4")
+  ifsc                String
+  verified            Boolean  @default(false)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("bank_accounts")
+}
+
+// ============================================================================
+// MODULE 2 — Products + AI generation
+// ============================================================================
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum ImageKind {
+  ORIGINAL
+  BG_REMOVED
+  PROCESSED
+  LIFESTYLE
+}
+
+enum AiJobKind {
+  BACKGROUND_REMOVAL
+  DESCRIPTION
+  TRANSLATION
+  PRICING_SUGGESTION
+  CATEGORIZATION
+  LIFESTYLE_PHOTO
+  SEARCH_INTENT
+}
+
+enum AiJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  slug     String     @unique
+  name     String
+  parentId String?    @map("parent_id")
+  parent   Category?  @relation("Subcategories", fields: [parentId], references: [id])
+  children Category[] @relation("Subcategories")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  products Product[] @relation("ProductTags")
+
+  @@map("tags")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  shopId          String        @map("shop_id")
+  categoryId      String?       @map("category_id")
+  slug            String        @unique
+  title           String
+  description     String?       @db.Text
+  sourceLang      String?       @map("source_lang")   // language of seller's raw input
+  sourceText      String?       @map("source_text") @db.Text
+  priceUsdCents   Int           @map("price_usd_cents")
+  priceInrPaise   Int           @map("price_inr_paise")
+  weightGrams     Int?          @map("weight_grams")
+  attributes      Json?         // freeform: { color, size, material, ... }
+  inventory       Int           @default(0)
+  status          ProductStatus @default(DRAFT)
+  publishedAt     DateTime?     @map("published_at")
+  rejectionNote   String?       @map("rejection_note") @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  shop      Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category  Category?      @relation(fields: [categoryId], references: [id])
+  images    ProductImage[]
+  tags      Tag[]          @relation("ProductTags")
+  aiJobs    AiJob[]
+  orderItems OrderItem[]
+  reviews   Review[]
+  wishlistedBy WishlistItem[]
+  cartItems CartItem[]
+
+  @@index([status, publishedAt])
+  @@index([shopId, status])
+  @@map("products")
+}
+
+model ProductImage {
+  id         String    @id @default(cuid())
+  productId  String    @map("product_id")
+  url        String
+  kind       ImageKind @default(ORIGINAL)
+  width      Int?
+  height     Int?
+  position   Int       @default(0)
+  aiMetadata Json?     @map("ai_metadata")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+  @@map("product_images")
+}
+
+model AiJob {
+  id         String      @id @default(cuid())
+  productId  String?     @map("product_id")
+  kind       AiJobKind
+  status     AiJobStatus @default(QUEUED)
+  input      Json
+  output     Json?
+  error      String?     @db.Text
+  attempts   Int         @default(0)
+  costUsdMicros Int?     @map("cost_usd_micros")
+  startedAt  DateTime?   @map("started_at")
+  finishedAt DateTime?   @map("finished_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([productId, kind])
+  @@map("ai_jobs")
+}
+
+// ============================================================================
+// MODULE 3 — Buyer side (cart, wishlist, reviews)
+// ============================================================================
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique @map("user_id")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String   @map("cart_id")
+  productId String   @map("product_id")
+  qty       Int      @default(1)
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  buyerId   String   @map("buyer_id")
+  rating    Int      // 1..5
+  body      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer   User    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, buyerId])
+  @@index([productId, rating])
+  @@map("reviews")
+}
+
+// ============================================================================
+// MODULE 4 — Orders, Payments, Payouts
+// ============================================================================
+
+enum OrderStatus {
+  PLACED
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  buyerId           String      @map("buyer_id")
+  status            OrderStatus @default(PLACED)
+  currency          String      @default("USD")
+  subtotalUsdCents  Int         @map("subtotal_usd_cents")
+  shippingUsdCents  Int         @map("shipping_usd_cents")
+  feesUsdCents      Int         @map("fees_usd_cents")
+  totalUsdCents     Int         @map("total_usd_cents")
+  fxRate            Decimal     @map("fx_rate") @db.Decimal(12, 6)
+  shippingAddress   Json        @map("shipping_address")
+  placedAt          DateTime    @default(now()) @map("placed_at")
+  paidAt            DateTime?   @map("paid_at")
+  shippedAt         DateTime?   @map("shipped_at")
+  deliveredAt       DateTime?   @map("delivered_at")
+  completedAt       DateTime?   @map("completed_at")
+  cancelledAt       DateTime?   @map("cancelled_at")
+
+  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  items    OrderItem[]
+  payment  Payment?
+  shipment Shipment?
+  dispute  Dispute?
+
+  @@index([buyerId, status])
+  @@index([status, placedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  orderId         String @map("order_id")
+  productId       String @map("product_id")
+  shopId          String @map("shop_id") // denormalized for fast payout splits
+  qty             Int
+  unitPriceUsdCents Int  @map("unit_price_usd_cents")
+  unitPriceInrPaise Int  @map("unit_price_inr_paise")
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([shopId])
+  @@map("order_items")
+}
+
+model Payment {
+  id                  String        @id @default(cuid())
+  orderId             String        @unique @map("order_id")
+  provider            String        @default("stripe")
+  providerIntentId    String?       @unique @map("provider_intent_id")
+  providerChargeId    String?       @map("provider_charge_id")
+  status              PaymentStatus @default(PENDING)
+  amountUsdCents      Int           @map("amount_usd_cents")
+  providerFeeUsdCents Int?          @map("provider_fee_usd_cents")
+  capturedAt          DateTime?     @map("captured_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Payout {
+  id                String       @id @default(cuid())
+  shopId            String       @map("shop_id")
+  razorpayPayoutId  String?      @unique @map("razorpay_payout_id")
+  status            PayoutStatus @default(PENDING)
+  amountInrPaise    Int          @map("amount_inr_paise")
+  orderItemIds      String[]     @map("order_item_ids")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  paidAt            DateTime?    @map("paid_at")
+  failureReason     String?      @map("failure_reason") @db.Text
+
+  shop Shop @relation(fields: [shopId], references: [id])
+
+  @@index([shopId, status])
+  @@map("payouts")
+}
+
+// ============================================================================
+// MODULE 5 — Logistics / Shipments
+// ============================================================================
+
+enum ShipmentStatus {
+  LABEL_PENDING
+  LABEL_CREATED
+  PICKED_UP
+  IN_TRANSIT
+  CUSTOMS
+  OUT_FOR_DELIVERY
+  DELIVERED
+  EXCEPTION
+  RETURNED
+}
+
+model Shipment {
+  id              String         @id @default(cuid())
+  orderId         String         @unique @map("order_id")
+  carrier         String         // shiprocket | dhl | fedex
+  trackingNumber  String?        @unique @map("tracking_number")
+  labelUrl        String?        @map("label_url")
+  customsDocUrl   String?        @map("customs_doc_url")
+  status          ShipmentStatus @default(LABEL_PENDING)
+  estimatedDelivery DateTime?    @map("estimated_delivery")
+  events          Json?          // array of tracking events
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("shipments")
+}
+
+// ============================================================================
+// MODULE 6 — Trust & Safety (disputes, fraud)
+// ============================================================================
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  CANCELLED
+}
+
+enum DisputeReason {
+  NOT_RECEIVED
+  NOT_AS_DESCRIBED
+  DAMAGED
+  COUNTERFEIT
+  OTHER
+}
+
+model Dispute {
+  id          String        @id @default(cuid())
+  orderId     String        @unique @map("order_id")
+  openedById  String        @map("opened_by_id")
+  reason      DisputeReason
+  status      DisputeStatus @default(OPEN)
+  description String        @db.Text
+  evidenceUrls String[]     @map("evidence_urls")
+  resolution  String?       @db.Text
+  openedAt    DateTime      @default(now()) @map("opened_at")
+  resolvedAt  DateTime?     @map("resolved_at")
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  openedBy User  @relation("DisputeOpener", fields: [openedById], references: [id])
+
+  @@index([status])
+  @@map("disputes")
+}
+
+model FraudSignal {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  kind      String   // duplicate_gst | velocity | ip_blocklist | ...
+  severity  Int      // 1..10
+  context   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("fraud_signals")
+}
+
+// ============================================================================
+// MODULE 7 — Admin audit
+// ============================================================================
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  adminId    String   @map("admin_id")
+  targetType String   @map("target_type") // shop | product | order | dispute | user
+  targetId   String   @map("target_id")
+  action     String   // approve | reject | suspend | moderate | refund | resolve
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([adminId, createdAt])
+  @@map("admin_actions")
+}

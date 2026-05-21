@@ -1,0 +1,126 @@
+"use client";
+
+// Buyer-facing form to open a dispute on an order. Posts to /api/disputes,
+// then redirects to the buyer's view of the new dispute.
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { EvidenceUrlList } from "@/components/safety/evidence-url-list";
+
+const REASONS: { value: string; label: string }[] = [
+  { value: "NOT_RECEIVED", label: "I never received the item" },
+  { value: "NOT_AS_DESCRIBED", label: "Item not as described" },
+  { value: "DAMAGED", label: "Item arrived damaged" },
+  { value: "COUNTERFEIT", label: "Item appears counterfeit" },
+  { value: "OTHER", label: "Other" },
+];
+
+export function DisputeForm({ orderId }: { orderId: string }) {
+  const router = useRouter();
+  const [reason, setReason] = useState(REASONS[0].value);
+  const [description, setDescription] = useState("");
+  const [evidence, setEvidence] = useState<string[]>(["", "", ""]);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (description.trim().length < 10) {
+      setError("Please describe what went wrong (at least 10 characters).");
+      return;
+    }
+    const evidenceUrls = evidence.map((u) => u.trim()).filter(Boolean);
+
+    startTransition(async () => {
+      const res = await fetch("/api/disputes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          reason,
+          description: description.trim(),
+          evidenceUrls: evidenceUrls.length > 0 ? evidenceUrls : undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(humanizeError(data.error) ?? `Request failed (${res.status})`);
+        return;
+      }
+      const data = (await res.json()) as { dispute?: { id: string } };
+      const id = data.dispute?.id;
+      router.refresh();
+      if (id) router.push(`/buyer/disputes/${id}`);
+      else router.push("/buyer/disputes");
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-5 rounded-lg border bg-card p-6">
+      <div className="space-y-2">
+        <Label htmlFor="dispute-reason">Reason</Label>
+        <select
+          id="dispute-reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          disabled={pending}
+        >
+          {REASONS.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="dispute-description">What happened?</Label>
+        <textarea
+          id="dispute-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={5}
+          maxLength={4000}
+          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Walk us through what went wrong, including dates."
+          disabled={pending}
+        />
+        <p className="text-xs text-muted-foreground">
+          {description.length}/4000 characters
+        </p>
+      </div>
+
+      <EvidenceUrlList values={evidence} onChange={setEvidence} disabled={pending} />
+
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>
+          {pending ? "Submitting…" : "Open dispute"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function humanizeError(code?: string): string | null {
+  switch (code) {
+    case "ORDER_NOT_FOUND":
+      return "We couldn't find that order on your account.";
+    case "ALREADY_DISPUTED":
+      return "A dispute is already open on this order.";
+    case "ORDER_NOT_DISPUTABLE":
+      return "This order isn't eligible for a dispute yet.";
+    case "FORBIDDEN":
+      return "Only buyers can open disputes.";
+    case "UNAUTHENTICATED":
+      return "Please sign in to open a dispute.";
+    default:
+      return null;
+  }
+}
