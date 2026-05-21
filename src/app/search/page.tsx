@@ -3,6 +3,7 @@
 // intent — categories, regions, price band, keywords, gift context — and the
 // catalog filters on those instead of doing a flat ILIKE.
 
+import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductCard } from "@/components/buyer/product-card";
 import { searchWithIntent } from "@/lib/catalog";
@@ -60,9 +61,9 @@ export default async function SearchPage(props: {
           {q && results.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No matches. Try removing filters from your query or browse by{" "}
-              <a className="underline" href="/shop">
+              <Link className="underline" href="/shop">
                 category
-              </a>
+              </Link>
               .
             </p>
           ) : null}
