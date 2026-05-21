@@ -5,6 +5,7 @@
 import { prisma } from "@/lib/db";
 import { enqueuePayouts } from "@/lib/payouts";
 import { stripeRefund } from "@/lib/stubs";
+import { getQueue } from "@/lib/queue";
 
 export type MarkCapturedInput = {
   orderId: string;
@@ -46,6 +47,27 @@ export async function markPaymentCaptured(input: MarkCapturedInput): Promise<voi
 }
 
 export type RefundInput = { orderId: string; reason?: string };
+export type RefundJobPayload = { orderId: string; reason?: string };
+
+/**
+ * Enqueue a refund. Use this from caller paths (e.g. dispute resolution) so a
+ * gateway failure can be retried by the worker without holding up the request.
+ * The worker calls `refundOrder` and BullMQ handles the retry backoff.
+ * Stuck refunds surface as Orders where status=REFUNDED but payment.status=CAPTURED.
+ */
+export async function enqueueRefund(input: RefundInput): Promise<void> {
+  const q = getQueue<RefundJobPayload>("payments.refund");
+  await q.add(
+    "refund",
+    { orderId: input.orderId, reason: input.reason },
+    {
+      attempts: 5,
+      backoff: { type: "exponential", delay: 5_000 },
+      removeOnComplete: { age: 24 * 3600, count: 1000 },
+      removeOnFail: false, // keep failed jobs for admin inspection
+    },
+  );
+}
 
 // Refund a captured payment. Stripe call happens after the DB commit so a
 // gateway failure cannot leave the Payment row in an inconsistent state.

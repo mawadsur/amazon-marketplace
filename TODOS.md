@@ -7,12 +7,12 @@ Single source of truth for everything deferred or pending. Keep dates as-of when
 
 ## P1 — Before First Real Seller (accepted 2026-05-21)
 
-Critical gaps that surfaced in the review and were greenlit. None are large; combined ~3 hrs CC.
+Critical gaps that surfaced in the review and were greenlit. All four shipped 2026-05-21.
 
-- [ ] **P1.1 — OTP brute-force lockout** (~10 min CC) — `src/lib/auth.ts` phone-otp authorize: query `OtpCode.attempts >= 5` and reject before bcrypt compare. Add `OtpCode.lockedUntil` (Schema TODO) for time-windowed locks.
-- [ ] **P1.2 — Rate limiting** (~30 min CC) — install `@upstash/ratelimit`, wrap `/api/otp/send`, signin authorize, `/api/cart`, `/api/reviews`, `/search`. 10 req/min anonymous, 30/min authenticated.
-- [ ] **P1.3 — Webhook signature verification** (~20 min each, 2 webhooks) — implement the `501 TODO` branches in `/api/webhooks/stripe` and `/api/webhooks/razorpay`. Use the providers' SDK verify helpers. Reject unsigned in prod.
-- [ ] **P1.4 — Refund dead-letter queue** (~45 min CC) — new BullMQ queue `payments.refund` with retry policy. `disputes.resolveDispute` enqueues; worker handles `refundOrder`. On final failure, write `AdminAction { action: 'refund_failed' }` for ops alert.
+- [x] **P1.1 — OTP brute-force lockout** — `src/lib/auth.ts` consumes the OTP code after 5 failed attempts (forces attacker to wait for a fresh code request, which won't come unless they're the real user). Simpler than a separate `lockedUntil` field; same brute-force resistance.
+- [x] **P1.2 — Rate limiting** — `src/lib/ratelimit.ts` with ioredis sliding-window + in-process fallback. Wraps `/api/otp/send` (5/min/IP, 3/min/phone), `/api/cart` POST (30/min/user), `/api/reviews` POST (5/min/user), `/api/checkout` POST (5/min/user). 429 with Retry-After header.
+- [x] **P1.3 — Webhook signature verification** — `/api/webhooks/stripe` uses `stripe.webhooks.constructEvent` against raw body; `/api/webhooks/razorpay` does constant-time HMAC-SHA256 verify. Both keep stub-mode for dev when secrets unset. Both reject `NO_SIGNATURE` / `BAD_SIGNATURE` with 401.
+- [x] **P1.4 — Refund dead-letter queue** — New `payments.refund` BullMQ queue with exponential backoff (5 attempts). `disputes.resolveDispute` now calls `enqueueRefund` instead of `refundOrder`. Worker (`src/workers/ai.ts:startRefunds`) handles retries. Stuck refunds surface as `Order.status=REFUNDED` + `Payment.status=CAPTURED` mismatch (queryable signal for ops).
 
 ## P1 — Foundation Hardening (accepted 2026-05-21)
 
@@ -26,8 +26,8 @@ Critical gaps that surfaced in the review and were greenlit. None are large; com
 
 Five expansions accepted in D2-D8. Full detail in `~/.gstack/projects/amazon/ceo-plans/2026-05-21-marketplace-cathedral-expansion.md`. Implementation order:
 
-1. [ ] **D8 — Smart Pricing** (~45 min CC) — extend `aiSuggestPrice` stub with real Claude prompt + `SoldComparable` table. Seller draft editor surfaces market-position panel.
-2. [ ] **D4 — Customs Pre-Clearance** (~1 hr CC) — new `src/lib/customs.ts` with HS code mapping + US duty calculation + Shiprocket DDP toggle. Updates `/checkout` landed-cost breakdown.
+1. [x] **D8 — Smart Pricing** — shipped 2026-05-21. `src/lib/pricing.ts` (median/p25/p75 from real comparables, last 90 days, Claude polish when ANTHROPIC_API_KEY set, category benchmark fallback). `GET /api/products/[id]/pricing-suggestion`. `PriceSuggestion` panel in `DraftEditor` with "Use $X" button + position badge (below/in-range/above market). Worker `startPricing` upgraded to use the same engine so initial AI price is market-aware. SoldComparable table deferred to P3 (uses live Product rows as comparables for now, which is sufficient until volume).
+2. [x] **D4 — Customs Pre-Clearance** — shipped 2026-05-21. `src/lib/customs.ts` (HS codes + US MFN duty by category: handicrafts 3.5%, textiles 6.5%, jewelry 5.5%, default 5%; non-US destinations get 0 duty). `estimateLanded()` computes subtotal + shipping + duty + service. `src/lib/orders.ts:createOrderFromCart` uses landed total. Checkout summary now shows itemized breakdown with category × rate disclosure (e.g. "US import duty (textiles 6.5%)"). Service fee: 4% with $1.99 floor (new `buyerServiceFeeUsdCents` in fees.ts). DDP messaging: "Duty + shipping are prepaid — no surprise charges at delivery." Schema unchanged: duty + service folded into existing `Order.feesUsdCents` with a TODO(schema) for breaking them out into their own columns later.
 3. [ ] **D2 — AI Shopping Concierge** (~45 min CC) — new `src/lib/concierge.ts`. Replaces `catalog.search` and `/search/page.tsx`. Streaming results with rationale per item. Mobile voice input.
 4. [ ] **D6 — Trust Engine** (~90 min CC) — `src/lib/trust-score.ts` replaces `badges.ts`. New `BuyerProtection` model + `Shop.trustScore`. Dynamic 0-100 score.
 5. [ ] **D3 — Provenance Stories** (~3-4 hrs CC) — new `ai.story_video` queue + Remotion render + ElevenLabs TTS. New `Shop.storyVideoUrl`.

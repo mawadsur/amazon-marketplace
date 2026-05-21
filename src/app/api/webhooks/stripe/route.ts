@@ -1,11 +1,19 @@
 // POST /api/webhooks/stripe
 //
-// Dev/stub mode (no STRIPE_WEBHOOK_SECRET): the stub checkout page POSTs
-// { orderId } directly here to simulate a "checkout.session.completed" event.
-// Real mode (secret configured): would verify the Stripe signature and parse
-// the event payload; left as TODO so we don't depend on the live SDK in MVP.
+// Two modes, gated on env.STRIPE_WEBHOOK_SECRET:
+//
+// REAL MODE: verifies the Stripe signature header, parses the event via
+// `stripe.webhooks.constructEvent`, and dispatches checkout.session.completed
+// to markPaymentCaptured. Any other event types are acknowledged with 200 so
+// Stripe doesn't retry them.
+//
+// STUB MODE (dev): the stub Pay-now page POSTs `{ orderId }` directly. No
+// signature required. This path stays so the local demo works without keys.
+//
+// Raw body is read ONCE at the top — req.text()/req.json() can't both run.
 
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { markPaymentCaptured } from "@/lib/payments";
@@ -16,15 +24,56 @@ const stubSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  // Real-mode path: verify signature, parse event, then call markPaymentCaptured.
+  const rawBody = await req.text();
+
+  // ───── REAL MODE ─────
   if (env.STRIPE_WEBHOOK_SECRET) {
-    // TODO(payments): wire stripe.webhooks.constructEvent + handle event types
-    return NextResponse.json({ error: "REAL_STRIPE_NOT_WIRED" }, { status: 501 });
+    if (!env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "STRIPE_SECRET_KEY missing — required alongside STRIPE_WEBHOOK_SECRET" },
+        { status: 500 },
+      );
+    }
+    const signature = req.headers.get("stripe-signature");
+    if (!signature) {
+      return NextResponse.json({ error: "NO_SIGNATURE" }, { status: 401 });
+    }
+
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
+    } catch {
+      return NextResponse.json({ error: "BAD_SIGNATURE" }, { status: 401 });
+    }
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const orderId = session.metadata?.orderId ?? session.client_reference_id ?? null;
+      if (!orderId) {
+        return NextResponse.json({ error: "MISSING_ORDER_REFERENCE" }, { status: 400 });
+      }
+      try {
+        await markPaymentCaptured({
+          orderId,
+          providerChargeId:
+            typeof session.payment_intent === "string" ? session.payment_intent : undefined,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "ERROR";
+        const status = msg === "ORDER_NOT_FOUND" ? 404 : 500;
+        return NextResponse.json({ error: msg }, { status });
+      }
+    }
+    // Other event types: acknowledge so Stripe stops retrying.
+    return NextResponse.json({ ok: true, received: event.type });
   }
 
+  // ───── STUB MODE ─────
   let json: unknown;
   try {
-    json = await req.json();
+    json = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "INVALID_JSON" }, { status: 400 });
   }

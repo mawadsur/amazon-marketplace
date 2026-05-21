@@ -10,6 +10,7 @@ import {
   updateQty,
   computeCartTotals,
 } from "@/lib/cart";
+import { rateLimit, clientKey, rateLimitHeaders } from "@/lib/ratelimit";
 
 async function getUserIdOr401() {
   const session = await auth();
@@ -34,6 +35,14 @@ const postSchema = z.object({
 export async function POST(req: Request) {
   const userId = await getUserIdOr401();
   if (!userId) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+
+  const rl = await rateLimit(clientKey(req, "cart.write", userId), 30, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: rateLimitHeaders(rl) },
+    );
+  }
 
   let body: unknown;
   try {

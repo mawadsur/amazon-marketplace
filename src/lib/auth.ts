@@ -53,6 +53,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (!otp) return null;
 
+        // Brute-force lockout: burn the OTP after MAX_OTP_ATTEMPTS so an
+        // attacker can't keep hammering the same code. Forces them to wait for
+        // a new code (which the real user has to request) — and the real user
+        // would have used it by now.
+        const MAX_OTP_ATTEMPTS = 5;
+        if (otp.attempts >= MAX_OTP_ATTEMPTS) {
+          await prisma.otpCode.update({
+            where: { id: otp.id },
+            data: { consumedAt: new Date() },
+          });
+          return null;
+        }
+
         const ok = await bcrypt.compare(code, otp.codeHash);
         if (!ok) {
           await prisma.otpCode.update({

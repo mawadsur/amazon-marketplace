@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendOtp } from "@/lib/stubs";
+import { rateLimit, clientKey, rateLimitHeaders } from "@/lib/ratelimit";
 
 const bodySchema = z.object({
   phone: z
@@ -11,6 +12,15 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Strict: OTP sending costs real money + opens a brute-force window per code.
+  const rl = await rateLimit(clientKey(req, "otp.send"), 5, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: rateLimitHeaders(rl) },
+    );
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -23,6 +33,15 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Invalid request" },
       { status: 400 },
+    );
+  }
+
+  // Per-phone cap on top of the per-IP cap — same number can only request 3/min.
+  const phoneRl = await rateLimit(`otp.send:phone:${parsed.data.phone}`, 3, 60);
+  if (!phoneRl.ok) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED", retryAfterSeconds: phoneRl.retryAfterSeconds },
+      { status: 429, headers: rateLimitHeaders(phoneRl) },
     );
   }
 

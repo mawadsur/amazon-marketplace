@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateDraft, publishProduct } from "@/lib/listings";
+import { PriceSuggestion } from "@/components/listing/price-suggestion";
 
 const schema = z.object({
   title: z.string().min(1, "Title required").max(120),
@@ -122,6 +123,13 @@ export function DraftEditor({ productId, initial }: Props) {
         {form.formState.errors.priceUsd ? (
           <p className="text-xs text-red-600">{form.formState.errors.priceUsd.message}</p>
         ) : null}
+        <PriceSuggestion
+          productId={productId}
+          currentPriceUsd={form.watch("priceUsd")}
+          onApply={(priceUsd) =>
+            form.setValue("priceUsd", priceUsd, { shouldDirty: true, shouldValidate: true })
+          }
+        />
       </div>
 
       <div className="space-y-2">

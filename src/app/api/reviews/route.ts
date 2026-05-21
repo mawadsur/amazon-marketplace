@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rateLimit, clientKey, rateLimitHeaders } from "@/lib/ratelimit";
 
 const schema = z.object({
   productId: z.string().min(1),
@@ -20,6 +21,14 @@ export async function POST(req: Request) {
   // BUYER role required — sellers/admins can't review products via this route.
   if (session.user.role !== "BUYER") {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  }
+
+  const rl = await rateLimit(clientKey(req, "reviews.write", session.user.id), 5, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: rateLimitHeaders(rl) },
+    );
   }
 
   let raw: unknown;

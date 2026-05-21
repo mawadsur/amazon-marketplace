@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { createOrderFromCart } from "@/lib/orders";
 import { stripeCreateCheckout } from "@/lib/stubs";
 import { prisma } from "@/lib/db";
+import { rateLimit, clientKey, rateLimitHeaders } from "@/lib/ratelimit";
 
 const shippingSchema = z.object({
   fullName: z.string().min(2).max(120),
@@ -27,6 +28,14 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(clientKey(req, "checkout", session.user.id), 5, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED", retryAfterSeconds: rl.retryAfterSeconds },
+      { status: 429, headers: rateLimitHeaders(rl) },
+    );
   }
 
   let json: unknown;

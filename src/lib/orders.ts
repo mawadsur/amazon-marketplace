@@ -5,10 +5,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { FX_USD_TO_INR, usdCentsToInrPaise } from "@/lib/stubs";
-import {
-  flatShippingUsdCents,
-  totalUsdCents,
-} from "@/lib/fees";
+import { estimateLanded } from "@/lib/customs";
 
 export type ShippingAddress = {
   fullName: string;
@@ -52,7 +49,17 @@ export async function createOrderFromCart(
     where: { userId: input.userId },
     include: {
       items: {
-        include: { product: { select: { id: true, status: true, shopId: true, priceUsdCents: true } } },
+        include: {
+          product: {
+            select: {
+              id: true,
+              status: true,
+              shopId: true,
+              priceUsdCents: true,
+              shop: { select: { category: true } },
+            },
+          },
+        },
       },
     },
   });
@@ -61,10 +68,21 @@ export async function createOrderFromCart(
     if (it.product.status !== "PUBLISHED") throw new Error("PRODUCT_UNAVAILABLE");
   }
 
-  let subtotal = 0;
-  for (const it of cart.items) subtotal += it.qty * it.product.priceUsdCents;
-  const shipping = flatShippingUsdCents();
-  const total = totalUsdCents(subtotal);
+  // Compute landed cost (subtotal + shipping + duty + service) for the actual
+  // destination, so the order total reflects what the buyer is being charged.
+  const landed = estimateLanded(
+    cart.items.map((it) => ({
+      category: it.product.shop.category,
+      lineSubtotalUsdCents: it.qty * it.product.priceUsdCents,
+    })),
+    input.shippingAddress.country,
+  );
+  const subtotal = landed.subtotalUsdCents;
+  const shipping = landed.shippingUsdCents;
+  // TODO(schema): break duty + service into their own columns. Today we lump
+  // them into feesUsdCents and re-derive at display time using customs.ts.
+  const fees = landed.dutyUsdCents + landed.serviceUsdCents;
+  const total = landed.totalUsdCents;
 
   // Single TX so cart-clear + order create are atomic.
   const order = await prisma.$transaction(async (tx) => {
@@ -75,7 +93,7 @@ export async function createOrderFromCart(
         currency: "USD",
         subtotalUsdCents: subtotal,
         shippingUsdCents: shipping,
-        feesUsdCents: 0,
+        feesUsdCents: fees,
         totalUsdCents: total,
         fxRate: new Prisma.Decimal(fxRate),
         shippingAddress: input.shippingAddress as unknown as Prisma.InputJsonValue,

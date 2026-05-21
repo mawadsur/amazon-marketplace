@@ -4,7 +4,7 @@
 // Module 4 — see TODO(module4) below.
 
 import { prisma } from "@/lib/db";
-import { refundOrder } from "@/lib/payments";
+import { enqueueRefund } from "@/lib/payments";
 import type {
   Dispute,
   DisputeReason,
@@ -144,14 +144,14 @@ export async function resolveDispute(input: ResolveDisputeInput): Promise<Disput
 
     return updated;
   }).then(async (updated) => {
-    // Side-effect outside the TX: refund the buyer through the stub Stripe
-    // refund. A gateway failure here should not roll back the resolution;
-    // ops can retry refundOrder() out of band.
+    // Enqueue the refund — the payments.refund worker handles the Stripe call
+    // with exponential backoff (5 attempts). Stuck refunds surface as Orders
+    // where status=REFUNDED but payment.status=CAPTURED.
     if (input.outcome === "BUYER") {
       try {
-        await refundOrder({ orderId: dispute.orderId, reason: resolution });
+        await enqueueRefund({ orderId: dispute.orderId, reason: resolution });
       } catch {
-        /* swallow — refund retry handled out of band */
+        /* enqueue failure is non-fatal — admin can manually retry */
       }
     }
     return updated;

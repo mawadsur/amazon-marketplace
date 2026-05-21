@@ -19,11 +19,12 @@ import { makeWorker, type QueueName } from "@/lib/queue";
 import {
   removeBackground,
   aiGenerateDescription,
-  aiSuggestPrice,
   aiCategorize,
   usdCentsToInrPaise,
 } from "@/lib/stubs";
+import { recommendPrice } from "@/lib/pricing";
 import { enqueueAfterCategorize } from "@/lib/ai-pipeline";
+import { refundOrder, type RefundJobPayload } from "@/lib/payments";
 
 export type AiJobPayload = { aiJobId: string; productId: string };
 
@@ -116,12 +117,18 @@ function startPricing() {
     const payload = j.data;
     return runJob(payload, async (_aiJob, product) => {
       const shop = await prisma.shop.findUniqueOrThrow({ where: { id: product.shopId } });
-      const out = await aiSuggestPrice({ category: shop.category });
+      const out = await recommendPrice({
+        productId: product.id,
+        category: shop.category,
+        title: product.title,
+        description: product.description,
+        attributes: (product.attributes as Record<string, unknown> | null) ?? null,
+      });
       await prisma.product.update({
         where: { id: product.id },
         data: {
-          priceUsdCents: out.priceUsdCents,
-          priceInrPaise: usdCentsToInrPaise(out.priceUsdCents),
+          priceUsdCents: out.recommendedUsdCents,
+          priceInrPaise: usdCentsToInrPaise(out.recommendedUsdCents),
         },
       });
       return out;
@@ -190,6 +197,16 @@ async function attachTags(productId: string, tagSlugs: string[]) {
   }
 }
 
+// ---------------------------------------------------------------- refunds
+
+function startRefunds() {
+  return makeWorker<RefundJobPayload>("payments.refund", async (j) => {
+    // refundOrder is idempotent — replays in the retry queue are safe.
+    await refundOrder({ orderId: j.data.orderId, reason: j.data.reason });
+    return { ok: true };
+  });
+}
+
 // ---------------------------------------------------------------- bootstrap
 
 const workers = [
@@ -197,6 +214,7 @@ const workers = [
   startDescription(),
   startPricing(),
   startCategorization(),
+  startRefunds(),
 ];
 
 const queueNames: QueueName[] = [
@@ -204,6 +222,7 @@ const queueNames: QueueName[] = [
   "ai.description",
   "ai.pricing",
   "ai.categorization",
+  "payments.refund",
 ];
 
 // Description finishing triggers categorization (sequential dependency).

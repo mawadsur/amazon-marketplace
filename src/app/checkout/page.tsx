@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { getOrCreateCart, computeCartTotals } from "@/lib/cart";
 import { formatUsd, approxInrFromUsdCents } from "@/lib/format";
-import { flatShippingUsdCents, totalUsdCents } from "@/lib/fees";
+import { estimateLanded } from "@/lib/customs";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function CheckoutPage() {
   }
 
   const cart = await getOrCreateCart(session.user.id);
-  const { itemCount, subtotalUsdCents } = computeCartTotals(cart.items);
+  const { itemCount } = computeCartTotals(cart.items);
 
   if (itemCount === 0) {
     return (
@@ -40,8 +41,36 @@ export default async function CheckoutPage() {
     );
   }
 
-  const shipping = flatShippingUsdCents();
-  const total = totalUsdCents(subtotalUsdCents);
+  // Pull each item's shop category so the landed-cost duty applies correctly.
+  // Pre-submit we don't know destination — default to US (the primary buyer
+  // market). Final amount is recomputed in /api/checkout using the submitted
+  // address.
+  const productIds = cart.items.map((it) => it.product.id);
+  const shopsByProductId = await prisma.product
+    .findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, shop: { select: { category: true } } },
+    })
+    .then((rows) =>
+      Object.fromEntries(rows.map((r) => [r.id, r.shop.category])),
+    );
+
+  const landed = estimateLanded(
+    cart.items.map((it) => ({
+      category: shopsByProductId[it.product.id] ?? "handicrafts",
+      lineSubtotalUsdCents: it.qty * it.product.priceUsdCents,
+    })),
+    "US",
+  );
+
+  // Group duty-incurring lines by category for the disclosure row.
+  const dutyByCategory = new Map<string, { rate: number; cents: number }>();
+  for (const line of landed.lines) {
+    if (line.lineDutyUsdCents <= 0) continue;
+    const prev = dutyByCategory.get(line.category) ?? { rate: line.rate, cents: 0 };
+    prev.cents += line.lineDutyUsdCents;
+    dutyByCategory.set(line.category, prev);
+  }
 
   return (
     <>
@@ -90,23 +119,44 @@ export default async function CheckoutPage() {
             </ul>
 
             <dl className="mt-6 space-y-2 border-t pt-4 text-sm">
-              <Row label="Subtotal" value={formatUsd(subtotalUsdCents)} />
-              <Row label="Shipping" value={formatUsd(shipping)} />
-              <Row label="Fees" value={formatUsd(0)} muted />
+              <Row label="Subtotal" value={formatUsd(landed.subtotalUsdCents)} />
+              <Row label="Shipping" value={formatUsd(landed.shippingUsdCents)} />
+              {landed.dutyApplied ? (
+                <>
+                  <Row
+                    label={
+                      <>
+                        US import duty
+                        <DutyLineNote dutyByCategory={dutyByCategory} />
+                      </>
+                    }
+                    value={formatUsd(landed.dutyUsdCents)}
+                  />
+                </>
+              ) : (
+                <Row label="US import duty" value={formatUsd(0)} muted />
+              )}
+              <Row
+                label="Service fee"
+                value={formatUsd(landed.serviceUsdCents)}
+                muted
+              />
               <div className="mt-2 flex items-baseline justify-between border-t pt-3">
-                <dt className="text-base font-semibold">Total</dt>
+                <dt className="text-base font-semibold">Landed total</dt>
                 <dd className="text-right">
                   <div className="text-lg font-semibold tabular-nums">
-                    {formatUsd(total)}
+                    {formatUsd(landed.totalUsdCents)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    approx {approxInrFromUsdCents(total)}
+                    approx {approxInrFromUsdCents(landed.totalUsdCents)}
                   </div>
                 </dd>
               </div>
             </dl>
             <p className="mt-4 text-xs text-muted-foreground">
-              You&apos;ll review payment on the next step.
+              {landed.dutyApplied
+                ? "Duty + shipping are prepaid (DDP) — no surprise charges at delivery. Final amount uses your shipping country."
+                : "Duty does not apply to your selected destination. Final amount uses your shipping country."}
             </p>
           </aside>
         </div>
@@ -115,11 +165,38 @@ export default async function CheckoutPage() {
   );
 }
 
-function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function Row({
+  label,
+  value,
+  muted,
+}: {
+  label: React.ReactNode;
+  value: string;
+  muted?: boolean;
+}) {
   return (
-    <div className="flex items-baseline justify-between">
+    <div className="flex items-baseline justify-between gap-3">
       <dt className={muted ? "text-muted-foreground" : ""}>{label}</dt>
       <dd className="tabular-nums">{value}</dd>
     </div>
   );
 }
+
+function DutyLineNote({
+  dutyByCategory,
+}: {
+  dutyByCategory: Map<string, { rate: number; cents: number }>;
+}) {
+  const entries = Array.from(dutyByCategory.entries());
+  if (entries.length === 0) return null;
+  return (
+    <span className="ml-1 text-xs text-muted-foreground">
+      (
+      {entries
+        .map(([cat, { rate }]) => `${cat} ${(rate * 100).toFixed(1)}%`)
+        .join(" · ")}
+      )
+    </span>
+  );
+}
+
