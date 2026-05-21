@@ -22,6 +22,7 @@ export type QueueName =
   | "ai.categorization"
   | "ai.lifestyle_photo"
   | "ai.search_intent"
+  | "ai.story_video"
   | "payments.refund";
 
 const _queues = new Map<QueueName, Queue>();

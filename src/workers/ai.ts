@@ -25,6 +25,7 @@ import {
 import { recommendPrice } from "@/lib/pricing";
 import { enqueueAfterCategorize } from "@/lib/ai-pipeline";
 import { refundOrder, type RefundJobPayload } from "@/lib/payments";
+import { generateStoryScript, type StoryVideoJobPayload } from "@/lib/story-video";
 
 export type AiJobPayload = { aiJobId: string; productId: string };
 
@@ -207,6 +208,18 @@ function startRefunds() {
   });
 }
 
+// ---------------------------------------------------------------- story video
+
+function startStoryVideo() {
+  return makeWorker<StoryVideoJobPayload>("ai.story_video", async (j) => {
+    // Phase 1: generate + persist the structured storyboard.
+    // Phase 2 (deferred): render to MP4 via Remotion + upload to S3, then
+    // set Shop.storyVideoUrl.
+    const script = await generateStoryScript(j.data.shopId);
+    return { slides: script.slides.length, aiAssisted: script.aiAssisted };
+  });
+}
+
 // ---------------------------------------------------------------- bootstrap
 
 const workers = [
@@ -215,6 +228,7 @@ const workers = [
   startPricing(),
   startCategorization(),
   startRefunds(),
+  startStoryVideo(),
 ];
 
 const queueNames: QueueName[] = [
@@ -223,6 +237,7 @@ const queueNames: QueueName[] = [
   "ai.pricing",
   "ai.categorization",
   "payments.refund",
+  "ai.story_video",
 ];
 
 // Description finishing triggers categorization (sequential dependency).

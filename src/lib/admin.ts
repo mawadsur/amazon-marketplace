@@ -8,6 +8,7 @@
 
 import { prisma } from "@/lib/db";
 import { applyBadgeNow } from "@/lib/badges";
+import { enqueueStoryVideo } from "@/lib/story-video";
 
 // ---------------------------------------------------------------- shops
 
@@ -41,6 +42,15 @@ export async function approveShop(shopId: string, adminId: string, reason?: stri
     await applyBadgeNow(shopId);
   } catch {
     /* ignore */
+  }
+
+  // Trigger Provenance Story generation (D3) — best-effort, runs async via
+  // the ai.story_video worker. Approval is what unlocks the shop for buyers,
+  // so generating the story now means the storefront has it ready.
+  try {
+    await enqueueStoryVideo(shopId);
+  } catch {
+    /* worker not running / Redis missing — story can be regenerated later */
   }
 
   return updated;

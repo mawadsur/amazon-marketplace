@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/buyer/product-card";
 import { VerificationBadge } from "@/components/safety/verification-badge";
 import { TrustScoreBadge } from "@/components/safety/trust-score-badge";
 import { getShopBySlug, regionNameToSlug } from "@/lib/catalog";
+import { parseStoryScript } from "@/lib/story-video";
 
 export const dynamic = "force-dynamic";
 
@@ -56,14 +57,85 @@ export default async function ShopPage(props: { params: Promise<{ shopSlug: stri
             <p className="mt-4 max-w-3xl text-base text-muted-foreground">{shop.bio}</p>
           ) : null}
 
-          {shop.story ? (
-            <section className="mt-8 rounded-lg border bg-card p-6">
-              <h2 className="text-lg font-semibold">Our story</h2>
-              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
-                {shop.story}
-              </p>
-            </section>
-          ) : null}
+          {(() => {
+            const script = parseStoryScript(shop.storyScript);
+            if (script && script.slides.length > 0) {
+              return (
+                <section className="mt-8 rounded-lg border bg-card p-6">
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-lg font-semibold">Our story</h2>
+                    {script.aiAssisted ? (
+                      <span className="text-xs text-muted-foreground">
+                        AI-narrated · written from {shop.name}&apos;s own words
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {script.slides.map((slide, i) => {
+                      if (slide.kind === "title") {
+                        return (
+                          <div
+                            key={i}
+                            className="sm:col-span-2 rounded-md bg-muted p-6 text-center"
+                          >
+                            <p className="text-2xl font-semibold tracking-tight">
+                              {slide.text}
+                            </p>
+                          </div>
+                        );
+                      }
+                      if (slide.kind === "image") {
+                        return (
+                          <figure
+                            key={i}
+                            className="overflow-hidden rounded-md border bg-muted"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={slide.imageUrl}
+                              alt={slide.caption ?? ""}
+                              className="h-48 w-full object-cover"
+                            />
+                            {slide.caption ? (
+                              <figcaption className="px-3 py-2 text-xs text-muted-foreground">
+                                {slide.caption}
+                              </figcaption>
+                            ) : null}
+                          </figure>
+                        );
+                      }
+                      if (slide.kind === "products") {
+                        return (
+                          <p
+                            key={i}
+                            className="sm:col-span-2 text-center text-sm font-medium text-muted-foreground"
+                          >
+                            {slide.text}
+                          </p>
+                        );
+                      }
+                      return (
+                        <p key={i} className="text-sm leading-relaxed">
+                          {slide.text}
+                        </p>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            }
+            if (shop.story) {
+              return (
+                <section className="mt-8 rounded-lg border bg-card p-6">
+                  <h2 className="text-lg font-semibold">Our story</h2>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+                    {shop.story}
+                  </p>
+                </section>
+              );
+            }
+            return null;
+          })()}
 
           <section className="mt-10 space-y-4">
             <h2 className="text-xl font-semibold">Products</h2>
