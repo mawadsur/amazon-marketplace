@@ -37,6 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: { signIn: "/sign-in" },
+  // Vercel + Fly + most production hosts sit behind a trusted reverse proxy
+  // that sets X-Forwarded-Host correctly. Trusting the host unconditionally
+  // here matches the env-var (AUTH_TRUST_HOST=true) we already document.
+  trustHost: true,
   providers: [
     Credentials({
       id: "phone-otp",
