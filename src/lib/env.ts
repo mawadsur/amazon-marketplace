@@ -1,7 +1,21 @@
 // Centralized env access with light validation.
 // Server-only values throw if accessed without being set.
+//
+// Many providers + the .env.example template ship empty placeholders, which
+// `z.string().url()` rejects ("" isn't a valid URL). To keep the schema
+// declarative, we pre-process `process.env` and treat "" as undefined for
+// every optional field. Required fields still throw if blank.
 
 import { z } from "zod";
+
+/** Drop empty-string entries so `.optional()` schemas see them as undefined. */
+function nonEmpty(source: Record<string, string | undefined>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(source)) {
+    out[k] = v === "" ? undefined : v;
+  }
+  return out;
+}
 
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -34,8 +48,10 @@ const publicSchema = z.object({
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 });
 
-export const env = serverSchema.parse(process.env);
-export const publicEnv = publicSchema.parse({
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-});
+export const env = serverSchema.parse(nonEmpty(process.env as Record<string, string | undefined>));
+export const publicEnv = publicSchema.parse(
+  nonEmpty({
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  }),
+);
