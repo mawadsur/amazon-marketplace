@@ -5,6 +5,116 @@ Single source of truth for everything deferred or pending. Keep dates as-of when
 
 ---
 
+## 🚦 PRE-MARKETING LAUNCH CHECKLIST — added 2026-05-23
+
+Surfaced by `/plan-ceo-review` ("what's missing before heavy marketing"). Grounded in actual repo state as of `3ba79ef`:
+- `src/lib/stubs.ts` still in front of Stripe/Razorpay/Shiprocket/Twilio/Anthropic
+- `fly.toml` present, app `marketplace-worker` never deployed
+- no `.github/workflows/`, no `tests/e2e/`, no `middleware.ts`, no security headers in `next.config.ts`
+- no `/terms /privacy /returns /contact /about /help` routes
+- no `sitemap.ts`, `robots.ts`, `manifest.ts`, JSON-LD product schema
+- no transactional email provider in `package.json`
+- no PostHog/Plausible/GA
+- Sentry config files present, DSN env not set
+- `src/lib/ratelimit.ts` present, Upstash not wired (in-memory falls back per cold start)
+
+Effort scale: **CC time / human-team time**. P0 blocks any real ad spend.
+
+### P0 — gate for ad spend
+
+- [ ] **P0-1 Stripe + Razorpay live credentials + one $1 end-to-end test purchase**
+  - Acceptance: real US card → INR payout completes, both webhooks fire, `Payment.status=PAID`, `Payout.status=PROCESSED`, buyer/seller email receipts both delivered.
+  - Files: `.env` (Vercel production scope, via REST API not CLI), `src/lib/stubs.ts` providers swap to real, `src/app/api/webhooks/*/route.ts`.
+  - Effort: CC ~30 min once keys provided / Human ~half day. **Blocked on client keys.**
+- [ ] **P0-2 Webhook idempotency — Stripe + Razorpay**
+  - What: redelivered webhook events must not double-create orders/payouts. Today there's nothing stopping it.
+  - Fix: add `@unique` on `Payment.providerSessionId` + `Payout.providerPayoutId`; check inside handler; early-return on duplicate; log dedupe count.
+  - Files: `prisma/schema.prisma`, `src/app/api/webhooks/stripe/route.ts`, `src/app/api/webhooks/razorpay/route.ts`. Generates one migration.
+  - Effort: CC ~20 min / Human ~2 h.
+- [ ] **P0-3 Deploy BullMQ worker to Fly.io**
+  - Why: AI listing pipeline silently sits in `AiJob.status=PENDING` without it; refund retries drop on the floor; `STORY_VIDEO` jobs never run.
+  - How: `fly launch --no-deploy && fly secrets set DATABASE_URL=$NEON_URL REDIS_URL=$UPSTASH_URL ANTHROPIC_API_KEY=$ANTHROPIC_KEY && fly deploy && fly status`.
+  - Acceptance: 1 AI listing job processes end-to-end against prod DB.
+  - Effort: CC ~20 min / Human ~1 h. **Blocked on P0-4.**
+- [ ] **P0-4 Upstash Redis live in production**
+  - Why: today's rate-limit falls back to in-memory per serverless instance — OTP brute-force window stays open across cold starts. Worker also needs Redis.
+  - How: create Upstash DB → set `REDIS_URL` on Vercel (production) + Fly.io secrets.
+  - Acceptance: `src/lib/ratelimit.ts` reports `backend=upstash` in a `/api/health` probe; OTP retry from a fresh IP gets blocked after threshold.
+  - Effort: CC ~10 min / Human ~30 min. **Blocked on client Upstash signup.**
+- [ ] **P0-5 Legal pages — Terms, Privacy, Returns, Buyer Protection, Cookies**
+  - Why: cross-border payments without ToS + Privacy is a Stripe + Razorpay merchant-agreement violation (and a regulatory issue in US + EU + India). Buyer Protection page is referenced from `/checkout` already.
+  - Scope: real lawyer-reviewed copy ideally; if not, use a template generator (Termly / Iubenda) as launch-day floor. Stub routes at `src/app/{terms,privacy,returns,buyer-protection,cookies}/page.tsx` so footer links don't 404.
+  - Effort: CC ~30 min to scaffold + render MD / Human ~1 week if lawyer in the loop. **CC can do the scaffold; legal copy is on the client.**
+- [ ] **P0-6 Transactional email — Resend (recommended)**
+  - 5 templates: order confirmation, payment received, shipped + tracking link, refund issued, seller payout.
+  - Why: today the system can take $1000 from a buyer and they get zero email. Conversion + trust killer.
+  - How: add `resend` to deps; `src/lib/email.ts` wrapper; React Email templates in `src/emails/`; fire from `src/lib/orders.ts` + payout completion + dispute resolution.
+  - Effort: CC ~1 h / Human ~1 day.
+- [ ] **P0-7 Sentry DSN configured in prod**
+  - Today `sentry.{client,server,edge}.config.ts` exist as no-ops because DSN env is empty.
+  - Set `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`. Verify by throwing a test error and seeing it in the issues UI.
+  - Effort: CC ~5 min / Human ~30 min. **Blocked on client Sentry signup.**
+- [ ] **P0-8 CI workflow + branch protection**
+  - `.github/workflows/ci.yml` running `npm run typecheck && npm test` on every PR. GitHub branch protection on `master`: require PR, require CI green, no force-push.
+  - Effort: CC ~20 min / Human ~2 h.
+- [ ] **P0-9 One real cross-border shipping test via Shiprocket**
+  - Pick one seed product, file one DDP customs declaration, ship a sample to a US address, track it through to delivered. Validates the entire logistics promise the marketing will make.
+  - Effort: depends on shipping time — order placed in 1 h, validation in 1–2 weeks. **Start NOW so it's done by launch.**
+
+### P1 — should land before traffic arrives
+
+- [ ] **P1-10 Security headers in `next.config.ts`**
+  - CSP (script-src self + Stripe + Razorpay + Sentry), HSTS (`max-age=63072000; includeSubDomains; preload`), X-Frame-Options DENY, Referrer-Policy `strict-origin-when-cross-origin`, Permissions-Policy locking out camera/mic/geo unless needed.
+  - Effort: CC ~30 min / Human ~3 h. Watch for CSP breakage in Sentry first day.
+- [ ] **P1-11 SEO floor — sitemap + robots + OG + JSON-LD**
+  - `src/app/sitemap.ts` listing all `/products/*`, `/shop/*`, `/shop/category/*`, `/shop/region/*` + home.
+  - `src/app/robots.ts` allowing all, pointing to sitemap.
+  - OpenGraph metadata in `layout.tsx` + per-page overrides; per-product `<meta property="og:image">` = first product image.
+  - JSON-LD `Product` + `Offer` on `/products/[slug]`.
+  - Effort: CC ~45 min / Human ~half day.
+- [ ] **P1-12 Real catalog — 30-50 seller-uploaded listings**
+  - Why: marketplace cold-start. Marketing dumping buyers into an empty/seed catalog kills retention. Seller-first onboarding beats buyer-first every time.
+  - Action: pilot recruit 30 Indian sellers (handicrafts/textiles/jewelry); they upload 3-5 products each via the existing onboarding flow.
+  - Effort: weeks, not coding hours. **Start parallel to P0 work.**
+- [ ] **P1-13 Analytics — PostHog**
+  - Funnel: `home_view → search_view → pdp_view → add_to_cart → checkout_start → checkout_paid`. Plus seller funnel: `signup → kyc_submitted → shop_published → first_listing → first_sale`.
+  - Without this, per-channel CPA optimization is impossible — you're throwing ad budget at a black box.
+  - Effort: CC ~1 h to instrument / Human ~1 day.
+- [ ] **P1-14 Mobile pass — Lighthouse + CWV**
+  - Target: LCP <2.5s, CLS <0.1, INP <200ms on `/`, `/search`, `/products/[slug]`, `/checkout` over throttled 4G. Test on real iOS Safari + Android Chrome (the Amazon redesign hasn't been touched on either yet).
+  - Effort: CC ~2 h audit + fixes / Human ~2 days.
+- [ ] **P1-15 Playwright E2E suite in CI**
+  - Move `~/.claude/skills/gstack/smoke-prod.mjs` + `e2e-auth.mjs` into `tests/e2e/`. Add buyer happy-path: signup → browse → add to cart → checkout (stub mode) → success. Add seller happy-path: signup → KYC → list product → product appears in search.
+  - Wire into CI to run nightly + on PR labeled `e2e`.
+  - Effort: CC ~2 h / Human ~3 days.
+- [ ] **P1-16 Refund + dispute human runbook**
+  - Code path exists (`disputes.resolveDispute` → `payments.refundOrder`). Human process doesn't. Doc at `docs/runbooks/disputes.md`: who responds in <24h, how BUYER vs SELLER decision is made, escalation, communication templates.
+  - Effort: CC ~30 min to draft / Human ~1 day to actually decide policy.
+- [ ] **P1-17 Neon point-in-time recovery + restore drill**
+  - Confirm PITR is enabled on the Neon project. Document a 5-minute restore procedure at `docs/runbooks/restore.md`. Run the drill once against a branch DB so you know it actually works.
+  - Effort: CC ~30 min / Human ~2 h.
+- [ ] **P1-18 Image pipeline — `<Image>` + R2 cache headers + AVIF**
+  - Today product images go through R2 raw URLs in product-card / PDP. At marketing spike volume that's a CDN + bandwidth pain.
+  - Switch to `next/image` with proper `sizes`, set R2 `Cache-Control: public, max-age=31536000, immutable` on uploaded objects, prefer AVIF then WebP.
+  - Effort: CC ~1 h / Human ~half day.
+
+### P2 — important but not launch-blocking
+
+- [ ] **P2-19 WCAG 2.1 AA accessibility audit** on the Amazon redesign. Keyboard nav on PDP buy box. Screen reader on checkout. Contrast on yellow buttons + the duty disclosure. axe-core in CI is the cheap version.
+- [ ] **P2-20 Cloudflare in front of Vercel** — WAF, bot mitigation, DDoS posture. Needed on launch day if you're driving paid traffic.
+- [ ] **P2-21 Status page + uptime monitor** — Better Uptime / Pingdom monitoring `/`, `/api/health`, `/products/[demo-slug]`. Public status.bazaar.<domain> page so when something goes down you have a truth source.
+- [ ] **P2-22 Customer support stack** — Help Scout or Front, support@ inbox, SLA <24h on first response, macros for top 10 questions (where's my order, refund eligibility, customs delay, payment failure, account issue).
+- [ ] **P2-23 FX disclosure on checkout receipt** — US buyer sees USD total; show the INR equivalent + rate + timestamp so they can't claim they were misled.
+- [ ] **P2-24 Insurance broker call** — marketplace operator E&O + product liability + cargo. Cross-border + handmade goods = real claim exposure. Don't launch without coverage.
+- [ ] **P2-25 Marketing email layer (separate from transactional)** — welcome series, abandoned-cart, win-back. Resend supports both; just different audiences + sending IPs.
+- [ ] **P2-26 Real KYC API for Indian sellers** — Udyam/GST/PAN strings are captured today, NOT verified. Pick a provider (Hyperverge / IDfy / Bureau / Signzy). Wire into `ShopKyc.applyBadgeNow` flow.
+- [ ] **P2-27 Fraud-signal scoring + block** — `FraudSignal` rows are written; nothing reads them. Pick a P0 threshold (e.g. velocity + same-IP signup count) before launch and wire it into `runSignupChecks`.
+- [ ] **P2-28 Per-channel CPA ceilings + budget caps** in Meta + Google Ads before the campaign starts. Not a code task — a marketing-ops task; capture it here so it doesn't get lost.
+- [ ] **P2-29 Referral / share mechanics** — only if growth loops are part of the marketing plan. "Invite a seller, get $X off first order" or "share this product, get 10% off". Defer until P0+P1 done.
+- [ ] **P2-30 Internationalization scaffolding** — currency display, timezones, locale-aware date formats. Even US-only buyers benefit. `next-intl` is the standard pick.
+
+---
+
 ## ✅ AMAZON REDESIGN SHIPPED — 2026-05-23
 
 **Live URL:** https://amazon-marketplace-sandy.vercel.app (Amazon-style light UI, on `master` merge commit `4d33191b`)
