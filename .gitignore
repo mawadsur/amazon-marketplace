@@ -40,3 +40,6 @@ Thumbs.db
 .idea/
 .vercel
 .gstack/
+
+# Local copies of Vercel env (DO NOT COMMIT)
+.vercel-prod.env

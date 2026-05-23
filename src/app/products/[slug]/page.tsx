@@ -18,7 +18,15 @@ import { ProductGallery } from "@/components/buyer/product-gallery";
 import { AddToCartButton } from "@/components/buyer/add-to-cart-button";
 import { WishlistToggle } from "@/components/buyer/wishlist-toggle";
 import { ReviewForm } from "@/components/buyer/review-form";
-import { getProductBySlug } from "@/lib/catalog";
+import {
+  getProductBySlug,
+  getFrequentlyBoughtTogether,
+  getRelatedProducts,
+} from "@/lib/catalog";
+import {
+  RelatedProductsRail,
+  FrequentlyBoughtTogether,
+} from "@/components/buyer/related-products-rail";
 import { isWishlisted } from "@/lib/wishlist";
 import { auth } from "@/lib/auth";
 import { formatRating } from "@/lib/format";
@@ -58,6 +66,21 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
   if (isAuthed) {
     wishlisted = await isWishlisted(session.user.id, product.id);
   }
+
+  const [fbtProducts, relatedProducts] = await Promise.all([
+    getFrequentlyBoughtTogether({
+      productId: product.id,
+      shopId: product.shopId,
+      limit: 2,
+    }),
+    getRelatedProducts({
+      productId: product.id,
+      categoryId: product.categoryId,
+      shopId: product.shopId,
+      priceUsdCents: product.priceUsdCents,
+      limit: 8,
+    }),
+  ]);
 
   const { dollars, cents } = splitPrice(product.priceUsdCents);
   const deliveryDate = formatDeliveryDate(9);
@@ -187,6 +210,21 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
               </div>
             </aside>
           </div>
+
+          <FrequentlyBoughtTogether
+            primary={{
+              slug: product.slug,
+              title: product.title,
+              priceUsdCents: product.priceUsdCents,
+              image: product.images[0]?.url ?? null,
+            }}
+            others={fbtProducts}
+          />
+
+          <RelatedProductsRail
+            heading="Customers who viewed this also viewed"
+            products={relatedProducts}
+          />
 
           {/* Customer reviews */}
           <section id="reviews" className="mt-12 space-y-4 border-t border-border pt-8">
