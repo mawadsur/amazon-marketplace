@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Returns & refunds · Bazaar",

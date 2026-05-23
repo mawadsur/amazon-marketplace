@@ -2,46 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Bazaar design tokens — Premium Dark + Gold.
+ * Recommended by ui-ux-pro-max for cross-border artisan marketplace.
+ * Pattern: Liquid Glass · CTA: gold · Background: stone-900.
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light mode — kept available for /admin or accessibility toggle */
+    --background: 60 9% 98%;             /* #FAFAF9 stone-50 */
+    --foreground: 20 14% 4%;             /* #0C0A09 stone-950 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --primary: 24 95% 53%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 4.8% 95.9%;
-    --accent-foreground: 24 9.8% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 24 95% 53%;
-    --radius: 0.5rem;
+    --card-foreground: 20 14% 4%;
+    --primary: 45 96% 41%;               /* #CA8A04 gold */
+    --primary-foreground: 20 14% 4%;
+    --secondary: 30 6% 92%;
+    --secondary-foreground: 20 14% 9%;
+    --muted: 30 6% 92%;
+    --muted-foreground: 30 6% 36%;
+    --accent: 45 96% 41%;
+    --accent-foreground: 20 14% 4%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 60 9% 98%;
+    --border: 30 6% 86%;
+    --input: 30 6% 86%;
+    --ring: 45 96% 41%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 20 14.3% 4.1%;
-    --card-foreground: 60 9.1% 97.8%;
-    --primary: 20.5 90.2% 48.2%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 20.5 90.2% 48.2%;
+    /* Premium Dark + Gold — the default. */
+    --background: 20 14% 9%;             /* #1C1917 stone-900 */
+    --foreground: 60 9% 98%;             /* #FAFAF9 stone-50 */
+    --card: 24 10% 14%;                  /* stone-800 */
+    --card-foreground: 60 9% 98%;
+    --primary: 45 96% 53%;               /* gold, slightly brighter for dark bg */
+    --primary-foreground: 20 14% 9%;
+    --secondary: 30 6% 25%;              /* #44403C stone-700 */
+    --secondary-foreground: 60 9% 98%;
+    --muted: 24 10% 14%;
+    --muted-foreground: 30 6% 64%;       /* readable in dark */
+    --accent: 45 96% 53%;
+    --accent-foreground: 20 14% 9%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 60 9% 98%;
+    --border: 30 6% 20%;
+    --input: 30 6% 20%;
+    --ring: 45 96% 53%;
   }
 }
 
@@ -51,5 +59,39 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Liquid Glass — translucent surfaces with backdrop blur. */
+@layer components {
+  .glass {
+    @apply border border-white/10 bg-white/5 backdrop-blur-xl backdrop-saturate-150;
+  }
+  .glass-strong {
+    @apply border border-white/15 bg-white/10 backdrop-blur-2xl backdrop-saturate-150;
+  }
+  .gradient-radial {
+    background-image: radial-gradient(
+      circle at top right,
+      hsl(45 96% 53% / 0.18),
+      transparent 60%
+    );
+  }
+  .gradient-hero {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(45 96% 53% / 0.25), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 80%, hsl(20 90% 50% / 0.15), transparent);
+  }
+}
+
+/* Respect reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
