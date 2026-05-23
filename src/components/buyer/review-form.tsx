@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Star } from "lucide-react";
+
+// Amazon-style review form: thin-bordered card, "Write a review" header,
+// 5-clickable-star rating, textarea, small yellow Submit button.
 
 export function ReviewForm({
   productId,
@@ -16,6 +18,7 @@ export function ReviewForm({
 }) {
   const router = useRouter();
   const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +27,10 @@ export function ReviewForm({
   if (!isAuthed) {
     return (
       <p className="text-sm text-muted-foreground">
-        <a className="underline" href="/sign-in">
+        <a className="cursor-pointer text-accent hover:underline" href="/sign-in">
           Sign in
         </a>{" "}
-        to leave a review.
+        to write a review.
       </p>
     );
   }
@@ -59,38 +62,63 @@ export function ReviewForm({
     });
   }
 
+  const displayedRating = hoverRating ?? rating;
+
   return (
-    <form onSubmit={onSubmit} className="space-y-3 rounded-lg border p-4">
-      <div>
-        <Label htmlFor="rating">Rating</Label>
-        <select
-          id="rating"
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-          className="ml-2 rounded-md border border-input bg-background px-2 py-1 text-sm"
-        >
-          {[5, 4, 3, 2, 1].map((n) => (
-            <option key={n} value={n}>
-              {n} star{n === 1 ? "" : "s"}
-            </option>
-          ))}
-        </select>
+    <form
+      onSubmit={onSubmit}
+      className="space-y-3 rounded-md border border-border bg-background p-4"
+    >
+      <h3 className="text-sm font-medium text-muted-foreground">
+        Write a review
+      </h3>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${n} star${n === 1 ? "" : "s"}`}
+            onMouseEnter={() => setHoverRating(n)}
+            onMouseLeave={() => setHoverRating(null)}
+            onClick={() => setRating(n)}
+            className="cursor-pointer rounded-sm p-1 transition-colors duration-150 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <Star
+              className={`h-5 w-5 ${
+                n <= displayedRating
+                  ? "fill-amber-400 text-amber-400"
+                  : "text-border"
+              }`}
+            />
+          </button>
+        ))}
+        <span className="ml-2 text-xs text-muted-foreground">
+          {rating}/5
+        </span>
       </div>
       <div>
-        <Label htmlFor="body">Review</Label>
+        <label htmlFor="review-body" className="sr-only">
+          Review
+        </label>
         <textarea
-          id="body"
+          id="review-body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          className="mt-1 block min-h-[80px] w-full rounded-md border border-input bg-background p-2 text-sm"
-          placeholder="Share what you thought..."
+          className="block min-h-[80px] w-full rounded-md border border-border bg-background p-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="What did you think of this product?"
         />
       </div>
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Submitting..." : "Submit review"}
-        </Button>
-        {done ? <p className="text-sm text-muted-foreground">Thanks for your review!</p> : null}
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {pending ? "Submitting…" : "Submit"}
+        </button>
+        {done ? (
+          <p className="text-sm text-muted-foreground">Thanks for your review.</p>
+        ) : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
     </form>

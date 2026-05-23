@@ -3,53 +3,37 @@
 @tailwind utilities;
 
 /*
- * Bazaar design tokens — Premium Dark + Gold.
- * Recommended by ui-ux-pro-max for cross-border artisan marketplace.
- * Pattern: Liquid Glass · CTA: gold · Background: stone-900.
+ * Bazaar design tokens — Amazon-inspired.
+ * Light mode only. Navy + orange + yellow palette.
+ * No glass, no gradients-as-decor. Dense, utilitarian, fast.
  */
 
 @layer base {
   :root {
-    /* Light mode — kept available for /admin or accessibility toggle */
-    --background: 60 9% 98%;             /* #FAFAF9 stone-50 */
-    --foreground: 20 14% 4%;             /* #0C0A09 stone-950 */
+    --background: 0 0% 100%;             /* #FFFFFF */
+    --foreground: 0 0% 7%;               /* #0F1111 */
     --card: 0 0% 100%;
-    --card-foreground: 20 14% 4%;
-    --primary: 45 96% 41%;               /* #CA8A04 gold */
-    --primary-foreground: 20 14% 4%;
-    --secondary: 30 6% 92%;
-    --secondary-foreground: 20 14% 9%;
-    --muted: 30 6% 92%;
-    --muted-foreground: 30 6% 36%;
-    --accent: 45 96% 41%;
-    --accent-foreground: 20 14% 4%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 60 9% 98%;
-    --border: 30 6% 86%;
-    --input: 30 6% 86%;
-    --ring: 45 96% 41%;
-    --radius: 0.75rem;
-  }
+    --card-foreground: 0 0% 7%;
+    --primary: 45 100% 54%;              /* #FFD814 yellow CTA */
+    --primary-foreground: 0 0% 7%;
+    --secondary: 27 100% 55%;            /* #FFA41C orange CTA */
+    --secondary-foreground: 0 0% 7%;
+    --accent: 187 100% 23%;              /* #007185 link teal */
+    --accent-foreground: 0 0% 100%;
+    --muted: 0 0% 97%;                   /* #F7F8F8 */
+    --muted-foreground: 0 0% 35%;        /* #565959 */
+    --destructive: 6 96% 36%;            /* #B12704 sale red */
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 87%;                  /* #DDDDDD */
+    --input: 0 0% 87%;
+    --ring: 27 100% 55%;                 /* focus orange */
+    --radius: 0.25rem;
 
-  .dark {
-    /* Premium Dark + Gold — the default. */
-    --background: 20 14% 9%;             /* #1C1917 stone-900 */
-    --foreground: 60 9% 98%;             /* #FAFAF9 stone-50 */
-    --card: 24 10% 14%;                  /* stone-800 */
-    --card-foreground: 60 9% 98%;
-    --primary: 45 96% 53%;               /* gold, slightly brighter for dark bg */
-    --primary-foreground: 20 14% 9%;
-    --secondary: 30 6% 25%;              /* #44403C stone-700 */
-    --secondary-foreground: 60 9% 98%;
-    --muted: 24 10% 14%;
-    --muted-foreground: 30 6% 64%;       /* readable in dark */
-    --accent: 45 96% 53%;
-    --accent-foreground: 20 14% 9%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 60 9% 98%;
-    --border: 30 6% 20%;
-    --input: 30 6% 20%;
-    --ring: 45 96% 53%;
+    /* Amazon-style dark header strips */
+    --header-bg: 209 24% 11%;            /* #131A22 */
+    --header-fg: 0 0% 100%;
+    --subheader-bg: 209 27% 19%;         /* #232F3E */
+    --star: 40 100% 55%;                 /* #FFA41C */
   }
 }
 
@@ -63,26 +47,30 @@
   }
 }
 
-/* Liquid Glass — translucent surfaces with backdrop blur. */
 @layer components {
-  .glass {
-    @apply border border-white/10 bg-white/5 backdrop-blur-xl backdrop-saturate-150;
+  /* Amazon-style CTA buttons */
+  .amzn-button-yellow {
+    @apply inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[#F7CA00] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1;
   }
-  .glass-strong {
-    @apply border border-white/15 bg-white/10 backdrop-blur-2xl backdrop-saturate-150;
+  .amzn-button-orange {
+    @apply inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[#FF8F00] bg-secondary px-4 text-sm font-medium text-secondary-foreground transition-colors duration-200 hover:bg-[#FA8900] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1;
   }
-  .gradient-radial {
-    background-image: radial-gradient(
-      circle at top right,
-      hsl(45 96% 53% / 0.18),
-      transparent 60%
-    );
+  .amzn-link {
+    @apply cursor-pointer text-accent transition-colors duration-200 hover:text-destructive hover:underline;
   }
-  .gradient-hero {
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(45 96% 53% / 0.25), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 80%, hsl(20 90% 50% / 0.15), transparent);
+  .amzn-star {
+    color: hsl(var(--star));
   }
+}
+
+/* Skeleton shimmer (preserved). */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 /* Respect reduced-motion. */
