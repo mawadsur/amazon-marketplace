@@ -5,31 +5,18 @@ Single source of truth for everything deferred or pending. Keep dates as-of when
 
 ---
 
-## ⚡ SESSION HANDOFF — 2026-05-23
+## ✅ AMAZON REDESIGN SHIPPED — 2026-05-23
 
-**Live URL:** https://amazon-marketplace-sandy.vercel.app (Liquid Glass + Framer Motion, on `master` commit `a622042`)
+**Live URL:** https://amazon-marketplace-sandy.vercel.app (Amazon-style light UI, on `master` merge commit `4d33191b`)
 **Repo:** https://github.com/mawadSur/amazon-marketplace (private)
-**Production smoke:** 24/26 routes passing (2 "failures" are 404-streaming-shell artifacts, not real bugs)
+**Production smoke (post-deploy):** `/`, `/search`, `/shop`, `/sign-in`, `/products/*` all HTTP 200 with Amazon palette + nav + Today's Picks rail rendered.
 
-### Active work in flight (resume next session)
-
-**Amazon-style UI redesign — partial, on branch `amazon-redesign-wip`:**
-
-- Decision: client wants the marketplace to look more like Amazon (dense, light mode, navy/orange palette, sidebar filters, yellow Buy Now / orange Add to Cart pill buttons, two-bar header).
-- Three parallel agents were spawned. **Agent 1 completed cleanly** (theme + nav + footer): rewrote `globals.css` (Amazon palette light-mode), `layout.tsx` (Inter only, drop Playfair Display + dark class), `tailwind.config.ts` (added `bg-header`, `bg-subheader`, `text-star`), `marketplace-nav.tsx` (sticky two-bar navy header with delivery-to pill / search / Account & Lists / Returns & Orders / Cart), `search-bar.tsx` (three-piece category-select + input + yellow icon button), new `src/components/marketplace/site-footer.tsx` (4-column dark footer with back-to-top).
-- **Agents 2 + 3 were killed mid-flight** when the user said "close out the session". Their partial changes touched: `product-card.tsx`, `shop-card.tsx`, `product-gallery.tsx`, `cart-item-controls.tsx`, `add-to-cart-button.tsx`, `wishlist-toggle/remove.tsx`, `review-form.tsx`, `checkout-form.tsx`, `pay-now-button.tsx`, `shop/page.tsx`, `shop/category/[slug]/page.tsx`, `shop/region/[slug]/page.tsx`, plus a new `discovery-filters.tsx` for the sidebar.
-- **What's NOT done in the WIP:** home page (`src/app/page.tsx`), `src/app/products/[slug]/page.tsx`, `src/app/cart/page.tsx`, `src/app/sign-in/page.tsx`, `src/app/checkout/page.tsx` + sub-pages, `src/app/search/page.tsx`, `src/app/shop/[shopSlug]/page.tsx`, loading.tsx files. Also: typecheck not verified on the WIP branch.
-
-**Resume instructions:**
-```bash
-git checkout amazon-redesign-wip
-npx tsc --noEmit                  # see what's broken
-# Re-spawn Agents 2 + 3 with their original prompts to finish their owned files
-# Verify typecheck + npm run build
-# Merge into master via PR or fast-forward
-```
-
-The original agent prompts for 2 and 3 are in this conversation's transcript. The full file-ownership map + shared color-token spec is captured in `~/.gstack/projects/amazon/projects/...` (run `/context-restore` to retrieve).
+Branch `amazon-redesign-wip` merged into master with `--no-ff`. Three parallel agents finished:
+- Agent 1: theme tokens + two-bar nav + footer (globals.css, layout.tsx, tailwind.config.ts, marketplace-nav.tsx, search-bar.tsx, site-footer.tsx).
+- Agent 2: discovery surfaces (home, search, shop storefront, shop category/region, loading skeletons, discovery-filters.tsx, product/shop cards).
+- Agent 3: transactional surfaces (PDP 3-col buy box, cart sticky summary, sign-in centered card, checkout + confirm/stub/success).
+- Component-level redesigns: product-card.tsx, shop-card.tsx, product-gallery.tsx, cart-item-controls.tsx, add-to-cart-button.tsx, wishlist-toggle.tsx, wishlist-remove.tsx, review-form.tsx, checkout-form.tsx, pay-now-button.tsx.
+- `src/components/marketplace/ai-search-hero.tsx` deleted.
 
 ### Awaiting client action — API credentials
 
