@@ -1,13 +1,14 @@
-// /checkout/success/[orderId] — post-payment thank-you. Links into the
-// buyer's order detail page where they can see the full status timeline.
+// /checkout/success/[orderId] — Amazon-style post-payment thank-you.
+// Links into the buyer's order detail page where they can see the full
+// status timeline.
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Check } from "lucide-react";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
-import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { getOrderForBuyer } from "@/lib/orders";
-import { formatUsd, approxInrFromUsdCents } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -27,11 +28,17 @@ export default async function CheckoutSuccessPage({
     return (
       <>
         <MarketplaceNav />
-        <main className="container mx-auto max-w-md px-4 py-16 text-center">
-          <h1 className="text-2xl font-semibold">Order not found</h1>
-          <Link href="/shop" className="mt-4 inline-block underline">
-            Keep browsing
-          </Link>
+        <main className="bg-background pb-12">
+          <div className="mx-auto max-w-3xl px-4 py-10">
+            <div className="rounded-sm border border-border bg-card p-8 text-center">
+              <h1 className="text-2xl font-medium text-foreground">
+                Order not found
+              </h1>
+              <Link href="/shop" className="amzn-link mt-4 inline-block text-sm">
+                Keep browsing
+              </Link>
+            </div>
+          </div>
         </main>
       </>
     );
@@ -40,42 +47,52 @@ export default async function CheckoutSuccessPage({
   return (
     <>
       <MarketplaceNav />
-      <main className="container mx-auto max-w-xl px-4 py-16">
-        <div className="rounded-lg border bg-card p-8 text-center shadow-sm">
-          <div className="text-xs font-medium uppercase tracking-wide text-green-700">
-            Payment received
-          </div>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Thank you</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            We&apos;ve received your order. A confirmation will be available in your
-            account.
-          </p>
-
-          <dl className="mt-8 space-y-2 rounded-md bg-muted/40 p-4 text-left text-sm">
-            <div className="flex items-baseline justify-between">
-              <dt className="text-muted-foreground">Order</dt>
-              <dd className="font-medium">#{order.id.slice(-8)}</dd>
+      <main className="bg-background pb-12">
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <div className="rounded-sm border border-border bg-card p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <Check
+                className="h-7 w-7 text-green-700"
+                aria-hidden="true"
+                strokeWidth={3}
+              />
             </div>
-            <div className="flex items-baseline justify-between">
-              <dt className="text-muted-foreground">Total paid</dt>
-              <dd className="text-right">
-                <div className="font-semibold tabular-nums">
+            <h1 className="mt-4 text-2xl font-medium text-foreground">
+              Thanks! Your order has been placed.
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Order #{order.id.slice(-8)}
+            </p>
+
+            <dl className="mx-auto mt-6 max-w-sm space-y-2 rounded-sm border border-border bg-background p-4 text-left text-sm">
+              <div className="flex items-baseline justify-between">
+                <dt className="text-muted-foreground">Order</dt>
+                <dd className="font-medium text-foreground">
+                  #{order.id.slice(-8)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <dt className="text-muted-foreground">Total paid</dt>
+                <dd className="font-bold tabular-nums text-foreground">
                   {formatUsd(order.totalUsdCents)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  approx {approxInrFromUsdCents(order.totalUsdCents)}
-                </div>
-              </dd>
-            </div>
-          </dl>
+                </dd>
+              </div>
+            </dl>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button asChild>
-              <Link href={`/buyer/orders/${order.id}`}>View order</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/shop">Continue shopping</Link>
-            </Button>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href={`/buyer/orders/${order.id}`}
+                className="amzn-button-yellow w-full sm:w-auto"
+              >
+                View your order
+              </Link>
+              <Link
+                href="/"
+                className="amzn-button-orange w-full sm:w-auto"
+              >
+                Continue shopping
+              </Link>
+            </div>
           </div>
         </div>
       </main>

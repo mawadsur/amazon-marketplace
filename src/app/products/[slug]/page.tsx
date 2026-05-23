@@ -1,8 +1,18 @@
-// /products/[slug] — product detail page with gallery, shop backstory, reviews,
-// add-to-cart, and wishlist toggle.
+// /products/[slug] — Amazon-style 3-column product detail page.
+// Left: gallery. Center: title, rating, price, description, about-shop.
+// Right: sticky buy-box with quantity, Buy Now, Add to Cart, trust badges.
+// Full-width customer reviews block below.
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import {
+  ChevronRight,
+  RotateCcw,
+  Shield,
+  Star,
+  Store,
+  Truck,
+} from "lucide-react";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductGallery } from "@/components/buyer/product-gallery";
 import { AddToCartButton } from "@/components/buyer/add-to-cart-button";
@@ -11,13 +21,28 @@ import { ReviewForm } from "@/components/buyer/review-form";
 import { getProductBySlug } from "@/lib/catalog";
 import { isWishlisted } from "@/lib/wishlist";
 import { auth } from "@/lib/auth";
-import {
-  formatUsd,
-  approxInrFromUsdCents,
-  formatRating,
-} from "@/lib/format";
+import { formatRating } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+function formatDeliveryDate(daysFromNow: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function splitPrice(cents: number): { dollars: string; cents: string } {
+  const whole = Math.floor(cents / 100);
+  const rem = cents % 100;
+  return {
+    dollars: whole.toLocaleString("en-US"),
+    cents: rem.toString().padStart(2, "0"),
+  };
+}
 
 export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
@@ -34,120 +59,208 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     wishlisted = await isWishlisted(session.user.id, product.id);
   }
 
+  const { dollars, cents } = splitPrice(product.priceUsdCents);
+  const deliveryDate = formatDeliveryDate(9);
+  const inStock = product.inventory > 0;
+  const lowStock = product.inventory > 0 && product.inventory < 5;
+  const ratingValue = product.ratingAvg ?? 0;
+  const filledStars = Math.round(ratingValue);
+  const categoryName = product.category?.name ?? "All";
+
   return (
     <>
       <MarketplaceNav />
-      <main className="container mx-auto max-w-6xl px-4 py-10">
-        <p className="text-xs text-muted-foreground">
-          <Link href="/shop" className="underline">
-            Marketplace
-          </Link>{" "}
-          ·{" "}
-          <Link href={`/shop/${product.shop.slug}`} className="underline">
-            {product.shop.name}
-          </Link>
-        </p>
+      <main className="bg-background pb-12">
+        <div className="mx-auto max-w-7xl px-4 py-3">
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+            <Link href="/" className="amzn-link">Home</Link>
+            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <Link href="/shop" className="amzn-link">{categoryName}</Link>
+            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <Link href={`/shop/${product.shop.slug}`} className="amzn-link truncate">{product.shop.name}</Link>
+          </nav>
 
-        <div className="mt-4 grid gap-10 lg:grid-cols-2">
-          <ProductGallery images={product.images} title={product.title} />
+          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[40%_36%_22%]">
+            {/* Col 1: Gallery */}
+            <section aria-label="Product images">
+              <ProductGallery images={product.images} title={product.title} />
+            </section>
 
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">{product.title}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                from{" "}
-                <Link href={`/shop/${product.shop.slug}`} className="underline">
-                  {product.shop.name}
-                </Link>{" "}
-                · {product.shop.city}, {product.shop.region}
-              </p>
-              <p className="mt-1 text-sm">
-                Rating: {formatRating(product.ratingAvg)}{" "}
-                <span className="text-muted-foreground">({product.ratingCount} reviews)</span>
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-3xl font-semibold">{formatUsd(product.priceUsdCents)}</p>
-              <p className="text-sm text-muted-foreground">
-                approx {approxInrFromUsdCents(product.priceUsdCents)}
-              </p>
-            </div>
-
-            {product.description ? (
-              <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
-            ) : null}
-
-            <div className="flex flex-wrap gap-3">
-              <AddToCartButton productId={product.id} isAuthed={isAuthed} />
-              <WishlistToggle
-                productId={product.id}
-                isAuthed={isAuthed}
-                initialWishlisted={wishlisted}
-              />
-            </div>
-
-            {product.inventory < 5 && product.inventory > 0 ? (
-              <p className="text-sm text-destructive">
-                Only {product.inventory} left in stock.
-              </p>
-            ) : null}
-            {product.inventory === 0 ? (
-              <p className="text-sm text-destructive">Currently out of stock.</p>
-            ) : null}
-
-            {product.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {product.tags.map((t) => (
-                  <span
-                    key={t.id}
-                    className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
-                  >
-                    {t.name}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {product.shop.story ? (
-          <section className="mt-12 rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold">About {product.shop.name}</h2>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
-              {product.shop.story}
-            </p>
-            <p className="mt-3 text-sm">
-              <Link href={`/shop/${product.shop.slug}`} className="underline">
-                Visit shop →
+            {/* Col 2: Details */}
+            <section aria-label="Product details" className="min-w-0 space-y-3">
+              <h1 className="text-2xl font-medium leading-tight text-foreground">
+                {product.title}
+              </h1>
+              <Link
+                href={`/shop/${product.shop.slug}`}
+                className="block text-sm text-accent hover:text-destructive hover:underline"
+              >
+                Visit the {product.shop.name} Store
               </Link>
-            </p>
-          </section>
-        ) : null}
 
-        <section className="mt-12 space-y-4">
-          <h2 className="text-xl font-semibold">Reviews</h2>
-          <ReviewForm productId={product.id} isAuthed={isAuthed} isBuyer={isBuyer} />
-          <ul className="space-y-4">
-            {product.reviews.map((r) => (
-              <li key={r.id} className="rounded-lg border p-4">
-                <p className="text-sm font-medium">
-                  {r.buyer.name ?? "Anonymous buyer"} · {r.rating}/5
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <StarRow value={filledStars} size="h-4 w-4" ariaLabel={`Average rating ${formatRating(product.ratingAvg)} out of 5`} />
+                <Link href="#reviews" className="amzn-link text-sm">{formatRating(product.ratingAvg)} ({product.ratingCount} ratings)</Link>
+              </div>
+
+              <hr className="border-border" />
+
+              <div className="space-y-1">
+                <p className="text-3xl font-medium tabular-nums text-foreground">
+                  <span className="align-top text-base">$</span>
+                  {dollars}
+                  <sup className="ml-0.5 text-base font-medium">{cents}</sup>
                 </p>
-                {r.body ? (
-                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">{r.body}</p>
+                <p className="text-xs text-muted-foreground">
+                  Inclusive of all taxes
+                </p>
+              </div>
+
+              <hr className="border-border" />
+
+              {product.description ? (
+                <div className="space-y-2">
+                  <h2 className="text-sm font-bold text-foreground">About this item</h2>
+                  {renderDescription(product.description)}
+                </div>
+              ) : null}
+              {product.shop.bio ? (
+                <div className="space-y-1 pt-2">
+                  <p className="text-sm leading-relaxed text-foreground">{product.shop.bio}</p>
+                  <Link href={`/shop/${product.shop.slug}`} className="amzn-link text-sm">Read more about {product.shop.name}</Link>
+                </div>
+              ) : null}
+            </section>
+
+            {/* Col 3: Buy box */}
+            <aside aria-label="Buy box" className="lg:sticky lg:top-[110px] lg:self-start">
+              <div className="space-y-3 rounded-sm border border-border bg-card p-4">
+                <p className="text-2xl font-medium tabular-nums text-foreground">
+                  <span className="align-top text-sm">$</span>
+                  {dollars}
+                  <sup className="ml-0.5 text-sm font-medium">{cents}</sup>
+                </p>
+                <p className="text-sm text-foreground">
+                  FREE delivery{" "}
+                  <span className="font-bold">{deliveryDate}</span>
+                </p>
+                {inStock ? (
+                  <p className="text-sm font-medium text-green-700">In Stock</p>
+                ) : (
+                  <p className="text-sm font-medium text-destructive">
+                    Currently out of stock
+                  </p>
+                )}
+                {lowStock ? (
+                  <p className="text-xs text-destructive">
+                    Only {product.inventory} left in stock.
+                  </p>
                 ) : null}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </p>
-              </li>
-            ))}
-            {product.reviews.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No reviews yet — be the first.</p>
-            ) : null}
-          </ul>
-        </section>
+
+                <div>
+                  <label htmlFor="buy-qty" className="block text-xs font-medium text-foreground">Quantity:</label>
+                  <select id="buy-qty" name="qty" defaultValue={1} className="mt-1 h-9 w-full cursor-pointer rounded-md border border-border bg-background px-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                    {Array.from({ length: Math.min(10, Math.max(1, product.inventory)) }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <AddToCartButton productId={product.id} isAuthed={isAuthed} variant="yellow" label="Buy Now" buyNow />
+                <AddToCartButton productId={product.id} isAuthed={isAuthed} variant="orange" />
+                <div className="pt-1">
+                  <WishlistToggle productId={product.id} isAuthed={isAuthed} initialWishlisted={wishlisted} />
+                </div>
+
+                <ul className="space-y-1.5 border-t border-border pt-3 text-xs">
+                  {[
+                    { Icon: Shield, label: "Secure transaction" },
+                    { Icon: Truck, label: "Ships from Bazaar" },
+                    { Icon: Store, label: `Sold by ${product.shop.name}` },
+                    { Icon: RotateCcw, label: "14-day returns" },
+                  ].map(({ Icon, label }) => (
+                    <li key={label} className="flex items-start gap-2 text-foreground">
+                      <Icon className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          </div>
+
+          {/* Customer reviews */}
+          <section id="reviews" className="mt-12 space-y-4 border-t border-border pt-8">
+            <h2 className="text-xl font-medium text-foreground">Customer reviews</h2>
+            <div className="flex items-center gap-3">
+              <StarRow value={filledStars} size="h-5 w-5" />
+              <p className="text-sm text-foreground"><span className="font-medium">{formatRating(product.ratingAvg)}</span> out of 5</p>
+              <p className="text-sm text-muted-foreground">{product.ratingCount} global rating{product.ratingCount === 1 ? "" : "s"}</p>
+            </div>
+            <ReviewForm productId={product.id} isAuthed={isAuthed} isBuyer={isBuyer} />
+            <ul className="space-y-4">
+              {product.reviews.map((r) => (
+                <li key={r.id} className="rounded-sm border border-border bg-card p-4">
+                  <p className="text-sm font-medium text-foreground">{r.buyer.name ?? "Anonymous buyer"}</p>
+                  <div className="mt-1">
+                    <StarRow value={r.rating} size="h-4 w-4" ariaLabel={`${r.rating} out of 5 stars`} />
+                  </div>
+                  {r.body ? (
+                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">{r.body}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</p>
+                </li>
+              ))}
+              {product.reviews.length === 0 ? (
+                <li className="text-sm text-muted-foreground">No reviews yet — be the first.</li>
+              ) : null}
+            </ul>
+          </section>
+        </div>
       </main>
     </>
+  );
+}
+
+function StarRow({
+  value,
+  size,
+  ariaLabel,
+}: {
+  value: number;
+  size: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <span aria-label={ariaLabel} className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={`${size} fill-current ${
+            n <= value ? "amzn-star" : "text-border"
+          }`}
+          aria-hidden="true"
+        />
+      ))}
+    </span>
+  );
+}
+
+function renderDescription(description: string) {
+  // Detect bullet-style descriptions (lines starting with -, *, or •).
+  const lines = description.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const bullets = lines.filter((l) => /^\s*[-*•]\s+/.test(l));
+  if (bullets.length >= 2 && bullets.length === lines.length) {
+    return (
+      <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-foreground">
+        {bullets.map((l, i) => (
+          <li key={i}>{l.replace(/^\s*[-*•]\s+/, "")}</li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+      {description}
+    </p>
   );
 }

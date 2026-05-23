@@ -1,7 +1,7 @@
 // /checkout/confirm/[orderId] — bridge between order creation and the
 // Stripe checkout redirect. Useful when a buyer reopens an unpaid order
 // (e.g. after closing the tab) — we re-issue a stub Stripe URL and send
-// them there.
+// them there. While the redirect happens, this renders a brief spinner.
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -28,11 +28,20 @@ export default async function CheckoutConfirmPage({
     return (
       <>
         <MarketplaceNav />
-        <main className="container mx-auto max-w-md px-4 py-16 text-center">
-          <h1 className="text-2xl font-semibold">Order not found</h1>
-          <Link href="/cart" className="mt-4 inline-block underline">
-            Back to cart
-          </Link>
+        <main className="bg-background pb-12">
+          <div className="mx-auto max-w-3xl px-4 py-10">
+            <div className="rounded-sm border border-border bg-card p-8 text-center">
+              <h1 className="text-2xl font-medium text-foreground">
+                Order not found
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We couldn&apos;t find that order on your account.
+              </p>
+              <Link href="/cart" className="amzn-link mt-4 inline-block text-sm">
+                Back to cart
+              </Link>
+            </div>
+          </div>
         </main>
       </>
     );

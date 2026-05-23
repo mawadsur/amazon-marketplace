@@ -1,14 +1,14 @@
-// /checkout/stub/[orderId] — dev-only "Stripe" surface.
-//
-// In real life the Stripe Checkout URL points at stripe.com; the stub URL
-// returned by stripeCreateCheckout() points here so the local dev flow works.
-// The Pay-now button POSTs to /api/webhooks/stripe to simulate capture.
+// /checkout/stub/[orderId] — dev-only "Stripe" surface, reskinned to the
+// Amazon look. In real life the Stripe Checkout URL points at stripe.com;
+// the stub URL points here so the local dev flow works. The Pay-now button
+// POSTs to /api/webhooks/stripe to simulate capture.
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { auth } from "@/lib/auth";
 import { getOrderForBuyer } from "@/lib/orders";
-import { formatUsd, approxInrFromUsdCents } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
 import { PayNowButton } from "@/components/checkout/pay-now-button";
 
 export const dynamic = "force-dynamic";
@@ -27,15 +27,24 @@ export default async function StripeStubPage({
   const order = await getOrderForBuyer(session.user.id, orderId);
   if (!order) {
     return (
-      <main className="container mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Order not found</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We couldn&apos;t find that order on your account.
-        </p>
-        <Link href="/cart" className="mt-4 inline-block underline">
-          Back to cart
-        </Link>
-      </main>
+      <>
+        <MarketplaceNav />
+        <main className="bg-background pb-12">
+          <div className="mx-auto max-w-3xl px-4 py-10">
+            <div className="rounded-sm border border-border bg-card p-8 text-center">
+              <h1 className="text-2xl font-medium text-foreground">
+                Order not found
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We couldn&apos;t find that order on your account.
+              </p>
+              <Link href="/cart" className="amzn-link mt-4 inline-block text-sm">
+                Back to cart
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
     );
   }
 
@@ -45,43 +54,49 @@ export default async function StripeStubPage({
   }
 
   return (
-    <main className="container mx-auto max-w-md px-4 py-16">
-      <div className="rounded-lg border bg-card p-8 shadow-sm">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">
-          Dev mode · Stripe stub
-        </div>
-        <h1 className="mt-2 text-2xl font-semibold">Confirm payment</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Order #{order.id.slice(-8)}
-        </p>
+    <>
+      <MarketplaceNav />
+      <main className="bg-background pb-12">
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <div className="rounded-sm border border-border bg-card p-6">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Dev mode · Stripe stub
+            </p>
+            <h2 className="mt-1 text-xl font-medium text-foreground">
+              Demo payment
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This is a demo Stripe payment page. Order #{order.id.slice(-8)}.
+            </p>
 
-        <div className="mt-6 rounded-md bg-muted/40 p-4 text-sm">
-          <div className="flex items-baseline justify-between">
-            <span className="text-muted-foreground">Amount due</span>
-            <span className="text-lg font-semibold tabular-nums">
-              {formatUsd(order.totalUsdCents)}
-            </span>
+            <div className="mt-4 rounded-sm border border-border bg-background p-4">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Amount due
+                </span>
+                <span className="text-lg font-bold tabular-nums text-foreground">
+                  {formatUsd(order.totalUsdCents)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <PayNowButton orderId={order.id} />
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              No card is charged. Click &ldquo;Pay now&rdquo; to simulate a
+              successful Stripe checkout.
+            </p>
+
+            <p className="mt-4 text-center text-sm">
+              <Link href="/cart" className="amzn-link">
+                Cancel and return to cart
+              </Link>
+            </p>
           </div>
-          <div className="mt-1 text-right text-xs text-muted-foreground">
-            approx {approxInrFromUsdCents(order.totalUsdCents)}
-          </div>
         </div>
-
-        <div className="mt-6">
-          <PayNowButton orderId={order.id} />
-        </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">
-          This is a development stub. No card is charged. Click &ldquo;Pay now&rdquo; to
-          simulate a successful Stripe checkout.
-        </p>
-      </div>
-
-      <p className="mt-6 text-center text-sm">
-        <Link href="/cart" className="text-muted-foreground underline">
-          Cancel and return to cart
-        </Link>
-      </p>
-    </main>
+      </main>
+    </>
   );
 }
