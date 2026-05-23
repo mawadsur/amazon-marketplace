@@ -5,6 +5,98 @@ Single source of truth for everything deferred or pending. Keep dates as-of when
 
 ---
 
+## ⚡ SESSION HANDOFF — 2026-05-23
+
+**Live URL:** https://amazon-marketplace-sandy.vercel.app (Liquid Glass + Framer Motion, on `master` commit `a622042`)
+**Repo:** https://github.com/mawadSur/amazon-marketplace (private)
+**Production smoke:** 24/26 routes passing (2 "failures" are 404-streaming-shell artifacts, not real bugs)
+
+### Active work in flight (resume next session)
+
+**Amazon-style UI redesign — partial, on branch `amazon-redesign-wip`:**
+
+- Decision: client wants the marketplace to look more like Amazon (dense, light mode, navy/orange palette, sidebar filters, yellow Buy Now / orange Add to Cart pill buttons, two-bar header).
+- Three parallel agents were spawned. **Agent 1 completed cleanly** (theme + nav + footer): rewrote `globals.css` (Amazon palette light-mode), `layout.tsx` (Inter only, drop Playfair Display + dark class), `tailwind.config.ts` (added `bg-header`, `bg-subheader`, `text-star`), `marketplace-nav.tsx` (sticky two-bar navy header with delivery-to pill / search / Account & Lists / Returns & Orders / Cart), `search-bar.tsx` (three-piece category-select + input + yellow icon button), new `src/components/marketplace/site-footer.tsx` (4-column dark footer with back-to-top).
+- **Agents 2 + 3 were killed mid-flight** when the user said "close out the session". Their partial changes touched: `product-card.tsx`, `shop-card.tsx`, `product-gallery.tsx`, `cart-item-controls.tsx`, `add-to-cart-button.tsx`, `wishlist-toggle/remove.tsx`, `review-form.tsx`, `checkout-form.tsx`, `pay-now-button.tsx`, `shop/page.tsx`, `shop/category/[slug]/page.tsx`, `shop/region/[slug]/page.tsx`, plus a new `discovery-filters.tsx` for the sidebar.
+- **What's NOT done in the WIP:** home page (`src/app/page.tsx`), `src/app/products/[slug]/page.tsx`, `src/app/cart/page.tsx`, `src/app/sign-in/page.tsx`, `src/app/checkout/page.tsx` + sub-pages, `src/app/search/page.tsx`, `src/app/shop/[shopSlug]/page.tsx`, loading.tsx files. Also: typecheck not verified on the WIP branch.
+
+**Resume instructions:**
+```bash
+git checkout amazon-redesign-wip
+npx tsc --noEmit                  # see what's broken
+# Re-spawn Agents 2 + 3 with their original prompts to finish their owned files
+# Verify typecheck + npm run build
+# Merge into master via PR or fast-forward
+```
+
+The original agent prompts for 2 and 3 are in this conversation's transcript. The full file-ownership map + shared color-token spec is captured in `~/.gstack/projects/amazon/projects/...` (run `/context-restore` to retrieve).
+
+### Awaiting client action — API credentials
+
+Email sent listing 10 providers across three tiers. The client needs to sign up + paste keys into Vercel env (Production scope) via REST API (CLI stdin is broken in v54.x — see auto-memory `feedback_pasting_envvars.md`).
+
+**Tier 1 — required for live transactions:**
+- [ ] Stripe (US payments) — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. Webhook URL: `https://amazon-marketplace-sandy.vercel.app/api/webhooks/stripe` (event: `checkout.session.completed`)
+- [ ] Razorpay (India payouts) — `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`. Webhook URL: `https://amazon-marketplace-sandy.vercel.app/api/webhooks/razorpay` (events: `payout.processed`, `payout.failed`, `payout.reversed`)
+- [ ] Anthropic (AI features) — `ANTHROPIC_API_KEY`
+- [ ] Twilio Verify (SMS OTP) — `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`
+- [ ] Cloudflare R2 or AWS S3 (product photos) — `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`
+
+**Tier 2 — recommended:**
+- [ ] Shiprocket (logistics) — `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`
+- [ ] Sentry (error monitoring) — `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`
+- [ ] Upstash Redis (worker + cluster rate-limit) — `REDIS_URL`
+
+**Tier 3 — optional:**
+- [ ] Remove.bg (real background removal) — `REMOVE_BG_API_KEY`
+- [ ] KYC provider — `KYC_PROVIDER_API_KEY`
+
+### Tier B — Production hardening I can do without client input
+
+- [ ] **Deploy BullMQ worker to Fly.io** — Dockerfile + fly.toml are in the repo. Steps: `fly launch --name marketplace-worker --no-deploy`, `fly secrets set DATABASE_URL=... REDIS_URL=... ANTHROPIC_API_KEY=...`, `fly deploy`. Unlocks AI image pipeline + refund retry queue in prod.
+- [ ] **CI workflow** — `.github/workflows/ci.yml` running `npm run typecheck && npm run lint && npm test` on PR. Gate merges on green.
+- [ ] **Formalize Playwright E2E** — Move the local smoke scripts at `~/.claude/skills/gstack/smoke-prod.mjs` and `e2e-auth.mjs` into `tests/e2e/` in the repo, install `@playwright/test`, wire `npm run test:e2e`. Add to CI.
+- [ ] **`db:push` → `db:migrate dev`** — generate initial migration, switch dev workflow before any multi-developer scenario.
+- [ ] **Smoke script `waitUntil` fix** — bump from `domcontentloaded` to `networkidle` so 404 detection catches the final status (currently smoke reports 200 on streaming 404s that are visually correct).
+
+### Tier D — Edge cases & polish (P2 backlog)
+
+From the CEO review:
+- [ ] **Inventory race**: two buyers add last unit to cart, both pay. Decrement `Product.inventory` inside Order $transaction with stock-check guard.
+- [ ] **AI pipeline rollback**: if categorization job fails after description+pricing succeed, product stuck DRAFT. Add pipeline-status orchestrator.
+- [ ] **Cart back-button recovery**: buyer back-buttons mid-stub-checkout → cart cleared, no order. Restore cart on `Order.status = CANCELLED`.
+- [ ] **shippingAddress JSON validation** at DB level (currently Zod-validated only at action boundary).
+- [ ] **PII redaction in Prisma logs** for production (currently query params logged).
+- [ ] **Input length caps** on `Dispute.description` (5000), `Review.body` (2000).
+- [ ] **Signin error message uniformity** — currently "phone not found" vs "code wrong" enables enumeration; unify to "Invalid credentials".
+- [ ] **N+1 fix** in `catalog.listProducts` (add `include: { images: { take: 1, orderBy: position } }`).
+- [ ] **Redis caching layer** for FX rate (1hr TTL), shop info (5min), catalog top-level reads (1min) — once Upstash is wired.
+- [ ] **DB index** `Review @@index([productId, createdAt])`.
+- [ ] **Empty states** across `/cart`, `/wishlist`, `/search` no-matches, `/shop` no-products.
+- [ ] **Image optimization** — switch plain `<img>` to `next/image` with `srcset` (requires CDN config, blocked on R2 setup).
+- [ ] **Saved addresses + saved payment methods** on `/buyer/account`.
+- [ ] **`/plan-design-review`** on the marketplace UI for coherence pass (do this AFTER Amazon redesign lands so we review the final look).
+
+### Tier E — Deferred cathedral expansions (decided 2026-05-21)
+
+- [ ] **Live Shopping rooms** (D5) — revisit at 50+ active shops. Tech to evaluate: LiveKit, Stream, Whereby.
+- [ ] **Multi-carrier logistics** (D7) — revisit when single-carrier failure rate >5% or shipping volume >1k/month. Add DHL + FedEx alongside Shiprocket.
+- [ ] **Wholesale B2B mode** (D9) — revisit after retail validates with ≥1 US boutique asking unprompted.
+- [ ] **Sentry global-error.js** — Sentry build wrapper recommends adding it for React render-error reporting. Suppressed warning currently via env var.
+- [ ] **`sentry.client.config.ts` migration to `instrumentation-client.ts`** — Sentry deprecation notice for Turbopack compatibility (we're not on Turbopack yet).
+- [ ] **Stripe refund actual integration** — `refundOrder()` currently calls `stripeRefund` stub; swap to real Stripe API call once `STRIPE_SECRET_KEY` is live.
+- [ ] **Real-time updates** via WebSocket / SSE for AI-job processing pages (currently poll every 2s).
+
+### Session 2026-05-23 — Specific items addressed
+
+- Installed `ui-ux-pro-max` skill at `.claude/skills/ui-ux-pro-max/` (committed `26f5267`)
+- Shipped Liquid Glass + Framer Motion + AI search hero design refresh (committed `a622042` — currently live on master)
+- Generated client status deck PDF at `docs/deck/client-status.pdf` + 8 screenshots (committed `1522be1`)
+- Drafted client email for API key signups (in conversation transcript)
+- Spawned Amazon-redesign agent plan; Agent 1 completed, Agents 2+3 killed at session close; WIP saved as branch `amazon-redesign-wip` for next session
+
+---
+
 ## P1 — Before First Real Seller (accepted 2026-05-21)
 
 Critical gaps that surfaced in the review and were greenlit. All four shipped 2026-05-21.
