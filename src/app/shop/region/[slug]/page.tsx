@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductCard } from "@/components/buyer/product-card";
 import { ShopCard } from "@/components/buyer/shop-card";
-import { FilterSidebar, SortControl } from "@/app/shop/page";
+import { FilterSidebar, SortControl } from "@/components/buyer/discovery-filters";
 import {
   listShops,
   listProducts,
