@@ -1,15 +1,14 @@
-// /checkout — shipping address + order summary. On submit, the CheckoutForm
-// posts to /api/checkout, which creates the Order and returns a (stub)
-// Stripe checkout URL; the form navigates the browser there.
+// /checkout — Amazon-style "Place your order" page.
+// Left: shipping address form + items being shipped.
+// Right: sticky order summary with landed-cost breakdown + Place order CTA.
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
-import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { getOrCreateCart, computeCartTotals } from "@/lib/cart";
-import { formatUsd, approxInrFromUsdCents } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
 import { estimateLanded } from "@/lib/customs";
 import { prisma } from "@/lib/db";
 
@@ -28,23 +27,26 @@ export default async function CheckoutPage() {
     return (
       <>
         <MarketplaceNav />
-        <main className="container mx-auto max-w-2xl px-4 py-16 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">Checkout</h1>
-          <p className="mt-3 text-muted-foreground">
-            Your cart is empty. Add something before checking out.
-          </p>
-          <Button asChild className="mt-6">
-            <Link href="/shop">Browse the marketplace</Link>
-          </Button>
+        <main className="bg-background pb-12">
+          <div className="mx-auto max-w-3xl px-4 py-10 text-center">
+            <h1 className="text-2xl font-medium text-foreground">
+              Your cart is empty
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Add something before checking out.
+            </p>
+            <Link href="/shop" className="amzn-button-yellow mt-4">
+              Continue shopping
+            </Link>
+          </div>
         </main>
       </>
     );
   }
 
   // Pull each item's shop category so the landed-cost duty applies correctly.
-  // Pre-submit we don't know destination — default to US (the primary buyer
-  // market). Final amount is recomputed in /api/checkout using the submitted
-  // address.
+  // Pre-submit we don't know destination — default to US. Final amount is
+  // recomputed in /api/checkout using the submitted address.
   const productIds = cart.items.map((it) => it.product.id);
   const shopsByProductId = await prisma.product
     .findMany({
@@ -67,136 +69,163 @@ export default async function CheckoutPage() {
   const dutyByCategory = new Map<string, { rate: number; cents: number }>();
   for (const line of landed.lines) {
     if (line.lineDutyUsdCents <= 0) continue;
-    const prev = dutyByCategory.get(line.category) ?? { rate: line.rate, cents: 0 };
+    const prev = dutyByCategory.get(line.category) ?? {
+      rate: line.rate,
+      cents: 0,
+    };
     prev.cents += line.lineDutyUsdCents;
     dutyByCategory.set(line.category, prev);
   }
+  const dutyCategoriesLabel = Array.from(dutyByCategory.entries())
+    .map(([cat, { rate }]) => `${cat} ${(rate * 100).toFixed(1)}%`)
+    .join(", ");
 
   return (
     <>
       <MarketplaceNav />
-      <main className="container mx-auto max-w-5xl px-4 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight">Checkout</h1>
+      <main className="bg-background pb-12">
+        <div className="mx-auto max-w-7xl px-4 py-4">
+          <h1 className="text-2xl font-medium text-foreground">
+            Place your order
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="font-bold text-foreground">
+              1. Shipping address
+            </span>{" "}
+            · 2. Payment · 3. Place order
+          </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <section className="lg:col-span-2">
-            <h2 className="text-lg font-semibold">Shipping address</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              We&apos;ll send your order updates here.
-            </p>
-            <div className="mt-4">
-              <CheckoutForm />
+          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[70%_30%]">
+            {/* Left column: address + items */}
+            <div className="space-y-4">
+              <section className="rounded-sm border border-border bg-card p-4">
+                <h2 className="text-lg font-medium text-foreground">
+                  Shipping address
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  We&apos;ll send your order updates here.
+                </p>
+                <div className="mt-4">
+                  <CheckoutForm />
+                </div>
+              </section>
+
+              <section className="rounded-sm border border-border bg-card p-4">
+                <h2 className="text-lg font-medium text-foreground">
+                  Items being shipped
+                </h2>
+                <ul className="mt-3 divide-y divide-border">
+                  {cart.items.map((it) => {
+                    const line = it.qty * it.product.priceUsdCents;
+                    const cover = it.product.images[0]?.url;
+                    return (
+                      <li
+                        key={it.id}
+                        className="flex items-start gap-3 py-3 text-sm"
+                      >
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-sm border border-border bg-background">
+                          {cover ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={cover}
+                              alt=""
+                              loading="lazy"
+                              className="h-full w-full object-contain"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium leading-tight text-foreground">
+                            {it.product.title}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {it.product.shop.name} · Qty {it.qty}
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium tabular-nums text-foreground">
+                          {formatUsd(line)}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             </div>
-          </section>
 
-          <aside className="rounded-lg border bg-card p-6">
-            <h2 className="text-lg font-semibold">Order summary</h2>
-            <ul className="mt-4 space-y-3">
-              {cart.items.map((it) => {
-                const line = it.qty * it.product.priceUsdCents;
-                return (
-                  <li key={it.id} className="flex items-start gap-3 text-sm">
-                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-                      {it.product.images[0]?.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={it.product.images[0].url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium leading-tight">{it.product.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {it.product.shop.name} · qty {it.qty}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium tabular-nums">{formatUsd(line)}</p>
-                  </li>
-                );
-              })}
-            </ul>
+            {/* Right column: order summary */}
+            <aside className="lg:sticky lg:top-[110px] lg:self-start">
+              <div className="rounded-sm border border-border bg-card p-4">
+                <button
+                  type="submit"
+                  form="checkout-form"
+                  className="amzn-button-yellow w-full"
+                >
+                  Place your order
+                </button>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  By placing your order, you agree to Bazaar&apos;s terms and
+                  conditions.
+                </p>
 
-            <dl className="mt-6 space-y-2 border-t pt-4 text-sm">
-              <Row label="Subtotal" value={formatUsd(landed.subtotalUsdCents)} />
-              <Row label="Shipping" value={formatUsd(landed.shippingUsdCents)} />
-              {landed.dutyApplied ? (
-                <>
+                <h2 className="mt-4 border-b border-border pb-2 text-base font-medium text-foreground">
+                  Order Summary
+                </h2>
+
+                <dl className="mt-3 space-y-2 text-sm">
                   <Row
-                    label={
-                      <>
-                        US import duty
-                        <DutyLineNote dutyByCategory={dutyByCategory} />
-                      </>
-                    }
-                    value={formatUsd(landed.dutyUsdCents)}
+                    label="Items:"
+                    value={formatUsd(landed.subtotalUsdCents)}
                   />
-                </>
-              ) : (
-                <Row label="US import duty" value={formatUsd(0)} muted />
-              )}
-              <Row
-                label="Service fee"
-                value={formatUsd(landed.serviceUsdCents)}
-                muted
-              />
-              <div className="mt-2 flex items-baseline justify-between border-t pt-3">
-                <dt className="text-base font-semibold">Landed total</dt>
-                <dd className="text-right">
-                  <div className="text-lg font-semibold tabular-nums">
-                    {formatUsd(landed.totalUsdCents)}
+                  <Row
+                    label="Shipping &amp; handling:"
+                    value={formatUsd(landed.shippingUsdCents)}
+                  />
+                  {landed.dutyApplied ? (
+                    <Row
+                      label="US import duty (per category):"
+                      value={formatUsd(landed.dutyUsdCents)}
+                    />
+                  ) : null}
+                  <Row
+                    label="Service fee:"
+                    value={formatUsd(landed.serviceUsdCents)}
+                  />
+                  <hr className="border-border" />
+                  <div className="flex items-baseline justify-between">
+                    <dt className="text-base font-bold text-destructive">
+                      Order total:
+                    </dt>
+                    <dd className="text-lg font-bold tabular-nums text-destructive">
+                      {formatUsd(landed.totalUsdCents)}
+                    </dd>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    approx {approxInrFromUsdCents(landed.totalUsdCents)}
-                  </div>
-                </dd>
+                </dl>
+
+                {landed.dutyApplied && dutyCategoriesLabel ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Categories: {dutyCategoriesLabel}
+                  </p>
+                ) : null}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {landed.dutyApplied
+                    ? "Duty + shipping are prepaid (DDP) — no surprise charges at delivery."
+                    : "Duty does not apply to your selected destination."}{" "}
+                  Final amount uses your shipping country.
+                </p>
               </div>
-            </dl>
-            <p className="mt-4 text-xs text-muted-foreground">
-              {landed.dutyApplied
-                ? "Duty + shipping are prepaid (DDP) — no surprise charges at delivery. Final amount uses your shipping country."
-                : "Duty does not apply to your selected destination. Final amount uses your shipping country."}
-            </p>
-          </aside>
+            </aside>
+          </div>
         </div>
       </main>
     </>
   );
 }
 
-function Row({
-  label,
-  value,
-  muted,
-}: {
-  label: React.ReactNode;
-  value: string;
-  muted?: boolean;
-}) {
+function Row({ label, value }: { label: React.ReactNode; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className={muted ? "text-muted-foreground" : ""}>{label}</dt>
-      <dd className="tabular-nums">{value}</dd>
+      <dt className="text-foreground">{label}</dt>
+      <dd className="tabular-nums text-foreground">{value}</dd>
     </div>
   );
 }
-
-function DutyLineNote({
-  dutyByCategory,
-}: {
-  dutyByCategory: Map<string, { rate: number; cents: number }>;
-}) {
-  const entries = Array.from(dutyByCategory.entries());
-  if (entries.length === 0) return null;
-  return (
-    <span className="ml-1 text-xs text-muted-foreground">
-      (
-      {entries
-        .map(([cat, { rate }]) => `${cat} ${(rate * 100).toFixed(1)}%`)
-        .join(" · ")}
-      )
-    </span>
-  );
-}
-

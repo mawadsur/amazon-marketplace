@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
   content: ["./src/**/*.{ts,tsx,js,jsx,mdx}"],
   theme: {
     container: {
@@ -40,6 +39,14 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        star: "hsl(var(--star))",
+      },
+      backgroundColor: {
+        header: "hsl(var(--header-bg))",
+        subheader: "hsl(var(--subheader-bg))",
+      },
+      textColor: {
+        header: "hsl(var(--header-fg))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -48,7 +55,6 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui"],
-        display: ["var(--font-display)", "ui-serif", "Georgia"],
       },
       animation: {
         shimmer: "shimmer 2.5s linear infinite",

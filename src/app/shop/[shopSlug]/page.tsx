@@ -1,7 +1,9 @@
-// /shop/[shopSlug] — shop storefront: banner, story, products.
+// /shop/[shopSlug] — Amazon "brand store" feel. Breadcrumbs, hero banner,
+// product grid, and a collapsible About section.
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductCard } from "@/components/buyer/product-card";
 import { VerificationBadge } from "@/components/safety/verification-badge";
@@ -11,155 +13,220 @@ import { parseStoryScript } from "@/lib/story-video";
 
 export const dynamic = "force-dynamic";
 
-export default async function ShopPage(props: { params: Promise<{ shopSlug: string }> }) {
+export default async function ShopPage(props: {
+  params: Promise<{ shopSlug: string }>;
+}) {
   const { shopSlug } = await props.params;
   const shop = await getShopBySlug(shopSlug);
   if (!shop) notFound();
 
-  const banner = shop.bannerUrl ?? "https://placehold.co/1200x320/png?text=Shop";
+  const script = parseStoryScript(shop.storyScript);
+  const productCount = shop.products.length;
 
   return (
     <>
       <MarketplaceNav />
-      <main>
-        <div className="relative h-48 w-full overflow-hidden bg-muted sm:h-64">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={banner} alt={shop.name} className="h-full w-full object-cover" />
+      <main className="bg-muted/40">
+        {/* Breadcrumb */}
+        <div className="container mx-auto max-w-7xl px-4 py-3">
+          <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
+            <Link href="/" className="hover:text-accent hover:underline">
+              Home
+            </Link>
+            <span className="px-1.5">›</span>
+            <Link href="/shop" className="hover:text-accent hover:underline">
+              Shops
+            </Link>
+            <span className="px-1.5">›</span>
+            <span className="text-foreground">{shop.name}</span>
+          </nav>
         </div>
-        <div className="container mx-auto max-w-6xl px-4 py-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">{shop.name}</h1>
-              <p className="text-sm text-muted-foreground">
-                {shop.city},{" "}
-                <Link
-                  href={`/shop/region/${regionNameToSlug(shop.region)}`}
-                  className="underline"
-                >
-                  {shop.region}
-                </Link>{" "}
-                ·{" "}
+
+        {/* Hero banner */}
+        <section className="container mx-auto max-w-7xl px-4 pb-4">
+          <div className="grid gap-6 rounded-sm border border-border bg-muted p-6 md:grid-cols-[auto_1fr] md:items-center md:p-8">
+            <div className="flex flex-col items-start gap-4">
+              {shop.logoUrl ? (
+                <div className="h-20 w-20 overflow-hidden rounded-sm border border-border bg-background">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={shop.logoUrl}
+                    alt={shop.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                  {shop.name}
+                </h1>
+                <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" aria-hidden />
+                  {shop.city},{" "}
+                  <Link
+                    href={`/shop/region/${regionNameToSlug(shop.region)}`}
+                    className="text-accent hover:underline"
+                  >
+                    {shop.region}
+                  </Link>
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <VerificationBadge value={shop.badge} hideIfNone />
+                  <TrustScoreBadge score={shop.trustScore} />
+                </div>
+              </div>
+            </div>
+            <div className="text-sm leading-relaxed text-foreground">
+              {shop.bio ? (
+                <p className="max-w-2xl">{shop.bio}</p>
+              ) : (
+                <p className="max-w-2xl text-muted-foreground">
+                  A verified Bazaar shop based in {shop.city}, {shop.region}.
+                </p>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground">
                 <Link
                   href={`/shop/category/${shop.category}`}
-                  className="underline"
+                  className="text-accent hover:underline"
                 >
                   {shop.category}
-                </Link>
+                </Link>{" "}
+                · {productCount}{" "}
+                {productCount === 1 ? "product" : "products"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <VerificationBadge value={shop.badge} hideIfNone />
-              <TrustScoreBadge score={shop.trustScore} />
-            </div>
           </div>
+        </section>
 
-          {shop.bio ? (
-            <p className="mt-4 max-w-3xl text-base text-muted-foreground">{shop.bio}</p>
-          ) : null}
+        {/* Products */}
+        <section className="container mx-auto max-w-7xl px-4 pb-6">
+          <div className="rounded-sm border border-border bg-background p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+              <h2 className="text-lg font-bold tracking-tight">
+                Products from {shop.name}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {productCount}
+                </span>{" "}
+                {productCount === 1 ? "result" : "results"}
+              </p>
+            </div>
+            {productCount > 0 ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {shop.products.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={{
+                      slug: p.slug,
+                      title: p.title,
+                      priceUsdCents: p.priceUsdCents,
+                      images: p.images,
+                      shop: {
+                        name: shop.name,
+                        slug: shop.slug,
+                        region: shop.region,
+                        badge: shop.badge,
+                      },
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                This shop hasn&apos;t published any products yet.
+              </p>
+            )}
+          </div>
+        </section>
 
-          {(() => {
-            const script = parseStoryScript(shop.storyScript);
-            if (script && script.slides.length > 0) {
-              return (
-                <section className="mt-8 rounded-lg border bg-card p-6">
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="text-lg font-semibold">Our story</h2>
+        {/* About the shop (collapsible) */}
+        {script || shop.story ? (
+          <section className="container mx-auto max-w-7xl px-4 pb-10">
+            <details className="group rounded-sm border border-border bg-card" open>
+              <summary className="flex cursor-pointer items-center justify-between p-4 text-base font-bold tracking-tight">
+                <span>About {shop.name}</span>
+                <span className="text-xs font-normal text-muted-foreground group-open:hidden">
+                  Show
+                </span>
+                <span className="hidden text-xs font-normal text-muted-foreground group-open:inline">
+                  Hide
+                </span>
+              </summary>
+              <div className="border-t border-border p-4">
+                {script && script.slides.length > 0 ? (
+                  <>
                     {script.aiAssisted ? (
-                      <span className="text-xs text-muted-foreground">
+                      <p className="mb-3 text-xs text-muted-foreground">
                         AI-narrated · written from {shop.name}&apos;s own words
-                      </span>
+                      </p>
                     ) : null}
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    {script.slides.map((slide, i) => {
-                      if (slide.kind === "title") {
-                        return (
-                          <div
-                            key={i}
-                            className="sm:col-span-2 rounded-md bg-muted p-6 text-center"
-                          >
-                            <p className="text-2xl font-semibold tracking-tight">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {script.slides.map((slide, i) => {
+                        if (slide.kind === "title") {
+                          return (
+                            <div
+                              key={i}
+                              className="rounded-sm bg-muted p-4 text-center sm:col-span-2"
+                            >
+                              <p className="text-lg font-semibold tracking-tight">
+                                {slide.text}
+                              </p>
+                            </div>
+                          );
+                        }
+                        if (slide.kind === "image") {
+                          return (
+                            <figure
+                              key={i}
+                              className="overflow-hidden rounded-sm border border-border bg-muted"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={slide.imageUrl}
+                                alt={slide.caption ?? ""}
+                                loading="lazy"
+                                className="h-40 w-full object-cover"
+                              />
+                              {slide.caption ? (
+                                <figcaption className="px-3 py-2 text-xs text-muted-foreground">
+                                  {slide.caption}
+                                </figcaption>
+                              ) : null}
+                            </figure>
+                          );
+                        }
+                        if (slide.kind === "products") {
+                          return (
+                            <p
+                              key={i}
+                              className="text-center text-sm font-medium text-muted-foreground sm:col-span-2"
+                            >
                               {slide.text}
                             </p>
-                          </div>
-                        );
-                      }
-                      if (slide.kind === "image") {
-                        return (
-                          <figure
-                            key={i}
-                            className="overflow-hidden rounded-md border bg-muted"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={slide.imageUrl}
-                              alt={slide.caption ?? ""}
-                              className="h-48 w-full object-cover"
-                            />
-                            {slide.caption ? (
-                              <figcaption className="px-3 py-2 text-xs text-muted-foreground">
-                                {slide.caption}
-                              </figcaption>
-                            ) : null}
-                          </figure>
-                        );
-                      }
-                      if (slide.kind === "products") {
+                          );
+                        }
                         return (
                           <p
                             key={i}
-                            className="sm:col-span-2 text-center text-sm font-medium text-muted-foreground"
+                            className="text-sm leading-relaxed text-foreground"
                           >
                             {slide.text}
                           </p>
                         );
-                      }
-                      return (
-                        <p key={i} className="text-sm leading-relaxed">
-                          {slide.text}
-                        </p>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            }
-            if (shop.story) {
-              return (
-                <section className="mt-8 rounded-lg border bg-card p-6">
-                  <h2 className="text-lg font-semibold">Our story</h2>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+                      })}
+                    </div>
+                  </>
+                ) : shop.story ? (
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
                     {shop.story}
                   </p>
-                </section>
-              );
-            }
-            return null;
-          })()}
-
-          <section className="mt-10 space-y-4">
-            <h2 className="text-xl font-semibold">Products</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {shop.products.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={{
-                    slug: p.slug,
-                    title: p.title,
-                    priceUsdCents: p.priceUsdCents,
-                    images: p.images,
-                    shop: { name: shop.name, slug: shop.slug, region: shop.region },
-                  }}
-                />
-              ))}
-              {shop.products.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  This shop hasn&apos;t published any products yet.
-                </p>
-              ) : null}
-            </div>
+                ) : null}
+              </div>
+            </details>
           </section>
-        </div>
+        ) : null}
       </main>
     </>
   );

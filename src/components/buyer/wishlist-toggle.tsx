@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+
+// Small teal "Add to List" / "Remove from List" text link. Amazon-style.
 
 export function WishlistToggle({
   productId,
@@ -20,7 +21,9 @@ export function WishlistToggle({
 
   function onClick() {
     if (!isAuthed) {
-      router.push(`/sign-in?next=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/sign-in?next=${encodeURIComponent(window.location.pathname)}`,
+      );
       return;
     }
     setError(null);
@@ -43,13 +46,18 @@ export function WishlistToggle({
 
   return (
     <div className="flex flex-col gap-1">
-      <Button variant="outline" onClick={onClick} disabled={pending}>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        className="cursor-pointer self-start text-sm text-accent transition-colors duration-150 hover:text-accent/80 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+      >
         {pending
-          ? "Saving..."
+          ? "Saving…"
           : wishlisted
-            ? "Saved to wishlist"
-            : "Add to wishlist"}
-      </Button>
+            ? "Remove from List"
+            : "Add to List"}
+      </button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );

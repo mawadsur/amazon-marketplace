@@ -1,13 +1,10 @@
 "use client";
 
-// Shipping-address form + Place-order action. Talks to /api/checkout, then
-// navigates the browser to the returned checkoutUrl (Stripe stub URL).
+// Amazon-style shipping address form. Same Server Action API as before:
+// POSTs to /api/checkout, then navigates to the returned checkoutUrl.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
@@ -80,13 +77,15 @@ export function CheckoutForm() {
           },
         }),
       });
-      const data = (await res.json()) as { checkoutUrl?: string; error?: string };
+      const data = (await res.json()) as {
+        checkoutUrl?: string;
+        error?: string;
+      };
       if (!res.ok || !data.checkoutUrl) {
         setTopError(data.error ?? "Could not place order. Please try again.");
         setSubmitting(false);
         return;
       }
-      // Navigate to the (stub) Stripe checkout page.
       router.push(data.checkoutUrl);
     } catch {
       setTopError("Network error. Please try again.");
@@ -95,7 +94,7 @@ export function CheckoutForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4" id="checkout-form">
       <Field id="fullName" label="Full name" error={errors.fullName}>
         <Input
           id="fullName"
@@ -176,10 +175,23 @@ export function CheckoutForm() {
         </p>
       ) : null}
 
-      <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-        {submitting ? "Placing order…" : "Place order"}
-      </Button>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="inline-flex cursor-pointer items-center justify-center rounded-full border border-border bg-background px-5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors duration-150 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? "Placing order…" : "Use this address"}
+      </button>
     </form>
+  );
+}
+
+function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="block h-9 w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm shadow-sm placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring"
+    />
   );
 }
 
@@ -195,8 +207,13 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+    <div className="space-y-1">
+      <label
+        htmlFor={id}
+        className="block text-xs font-medium text-foreground"
+      >
+        {label}
+      </label>
       {children}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

@@ -7,8 +7,8 @@
 ---
 
 **Project:** Bazaar Marketplace
-**Generated:** 2026-05-22 20:28:40
-**Category:** E-commerce Luxury
+**Generated:** 2026-05-23 11:20:19
+**Category:** Financial Dashboard
 
 ---
 
@@ -18,24 +18,24 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#1C1917` | `--color-primary` |
-| Secondary | `#44403C` | `--color-secondary` |
-| CTA/Accent | `#CA8A04` | `--color-cta` |
-| Background | `#FAFAF9` | `--color-background` |
-| Text | `#0C0A09` | `--color-text` |
+| Primary | `#7C3AED` | `--color-primary` |
+| Secondary | `#A78BFA` | `--color-secondary` |
+| CTA/Accent | `#22C55E` | `--color-cta` |
+| Background | `#FAF5FF` | `--color-background` |
+| Text | `#4C1D95` | `--color-text` |
 
-**Color Notes:** Premium dark + gold accent
+**Color Notes:** Trust purple + transaction green
 
 ### Typography
 
-- **Heading Font:** Amatic SC
-- **Body Font:** Cabin
-- **Mood:** indie, craft, handmade, artisan, organic, creative
-- **Google Fonts:** [Amatic SC + Cabin](https://fonts.google.com/share?selection.family=Amatic+SC:wght@400;700|Cabin:wght@400;500;600;700)
+- **Heading Font:** Rubik
+- **Body Font:** Nunito Sans
+- **Mood:** ecommerce, clean, shopping, product, retail, conversion
+- **Google Fonts:** [Rubik + Nunito Sans](https://fonts.google.com/share?selection.family=Nunito+Sans:wght@300;400;500;600;700|Rubik:wght@300;400;500;600;700)
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Cabin:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&display=swap');
 ```
 
 ### Spacing Variables
@@ -68,7 +68,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #CA8A04;
+  background: #22C55E;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -85,8 +85,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #1C1917;
-  border: 2px solid #1C1917;
+  color: #7C3AED;
+  border: 2px solid #7C3AED;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -99,7 +99,7 @@
 
 ```css
 .card {
-  background: #FAFAF9;
+  background: #FAF5FF;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -125,9 +125,9 @@
 }
 
 .input:focus {
-  border-color: #1C1917;
+  border-color: #7C3AED;
   outline: none;
-  box-shadow: 0 0 0 3px #1C191720;
+  box-shadow: 0 0 0 3px #7C3AED20;
 }
 ```
 
@@ -153,13 +153,13 @@
 
 ## Style Guidelines
 
-**Style:** Liquid Glass
+**Style:** Dark Mode (OLED)
 
-**Keywords:** Flowing glass, morphing, smooth transitions, fluid effects, translucent, animated blur, iridescent, chromatic aberration
+**Keywords:** Dark theme, low light, high contrast, deep black, midnight blue, eye-friendly, OLED, night mode, power efficient
 
-**Best For:** Premium SaaS, high-end e-commerce, creative platforms, branding experiences, luxury portfolios
+**Best For:** Night-mode apps, coding platforms, entertainment, eye-strain prevention, OLED devices, low-light
 
-**Key Effects:** Morphing elements (SVG/CSS), fluid animations (400-600ms curves), dynamic blur (backdrop-filter), color transitions
+**Key Effects:** Minimal glow (text-shadow: 0 0 10px), dark-to-light transitions, low white emission, high readability, visible focus
 
 ### Page Pattern
 
@@ -173,8 +173,8 @@
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Vibrant & Block-based
-- ❌ Playful colors
+- ❌ Light mode default
+- ❌ Slow rendering
 
 ### Additional Forbidden Patterns
 

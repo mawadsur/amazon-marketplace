@@ -1,20 +1,19 @@
-// /shop — marketplace directory. Featured shops + browse by category + region.
+// /shop — Amazon-style directory: breadcrumbs, two-column (sidebar + grid).
 
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
-import { ShopCard } from "@/components/buyer/shop-card";
+import { ProductCard } from "@/components/buyer/product-card";
 import {
-  listShops,
-  listCategories,
-  listRegions,
-  regionNameToSlug,
-} from "@/lib/catalog";
+  FilterSidebar,
+  SortControl,
+} from "@/components/buyer/discovery-filters";
+import { listProducts, listCategories, listRegions } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function ShopDirectoryPage() {
-  const [shops, categories, regions] = await Promise.all([
-    listShops({ limit: 6 }),
+  const [products, categories, regions] = await Promise.all([
+    listProducts({ limit: 48 }),
     listCategories(),
     listRegions(),
   ]);
@@ -22,65 +21,56 @@ export default async function ShopDirectoryPage() {
   return (
     <>
       <MarketplaceNav />
-      <main className="container mx-auto max-w-6xl px-4 py-10">
-        <section className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Browse the marketplace</h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Authentic Indian goods from vetted shops. Browse by category, region, or featured maker.
-          </p>
-        </section>
+      <main className="bg-muted/40">
+        <div className="container mx-auto max-w-7xl px-4 py-3">
+          <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
+            <Link href="/" className="hover:text-accent hover:underline">
+              Home
+            </Link>
+            <span className="px-1.5">›</span>
+            <span className="text-foreground">All categories</span>
+          </nav>
+        </div>
 
-        <section className="mt-10 space-y-4">
-          <h2 className="text-xl font-semibold">Categories</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/shop/category/${c.slug}`}
-                className="rounded-lg border bg-card p-6 transition hover:bg-accent"
-              >
-                <h3 className="text-lg font-medium">{c.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {c._count.products} products
+        <div className="container mx-auto max-w-7xl px-4 pb-10">
+          <h1 className="text-2xl font-bold tracking-tight">All shops &amp; products</h1>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[24%_1fr]">
+            <FilterSidebar
+              categories={categories.map((c) => ({
+                slug: c.slug,
+                name: c.name,
+                count: c._count.products,
+              }))}
+              regions={regions}
+            />
+
+            <section className="rounded-sm border border-border bg-background p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                <p className="text-sm">
+                  <span className="font-medium">{products.length}</span>{" "}
+                  <span className="text-muted-foreground">results</span>
                 </p>
-              </Link>
-            ))}
-            {categories.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No categories yet. Run `npm run db:seed`.</p>
-            ) : null}
-          </div>
-        </section>
+                <SortControl />
+              </div>
 
-        <section className="mt-10 space-y-4">
-          <h2 className="text-xl font-semibold">Regions</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {regions.map((r) => (
-              <Link
-                key={r.region}
-                href={`/shop/region/${regionNameToSlug(r.region)}`}
-                className="rounded-lg border bg-card p-6 transition hover:bg-accent"
-              >
-                <h3 className="text-lg font-medium">{r.region}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{r.shopCount} shops</p>
-              </Link>
-            ))}
-            {regions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No regions yet.</p>
-            ) : null}
-          </div>
-        </section>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {products.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+                {products.length === 0 ? (
+                  <p className="col-span-full py-12 text-center text-sm text-muted-foreground">
+                    No products yet. Run <code>npm run db:seed</code>.
+                  </p>
+                ) : null}
+              </div>
 
-        <section className="mt-10 space-y-4">
-          <h2 className="text-xl font-semibold">Featured shops</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {shops.map((s) => (
-              <ShopCard key={s.id} shop={s} />
-            ))}
-            {shops.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No approved shops yet.</p>
-            ) : null}
+              <footer className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+                Page 1 of 1
+              </footer>
+            </section>
           </div>
-        </section>
+        </div>
       </main>
     </>
   );

@@ -1,11 +1,11 @@
 "use client";
 
-// Pay-now button for the dev "Stripe" stub page. POSTs to the webhook handler
-// to simulate the payment completing, then redirects to the success page.
+// Pay-now button for the dev "Stripe" stub page. Yellow Amazon pill style.
+// POSTs to the webhook handler to simulate the payment completing, then
+// redirects to the success page.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 
 export function PayNowButton({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -22,7 +22,9 @@ export function PayNowButton({ orderId }: { orderId: string }) {
         body: JSON.stringify({ orderId }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
         setErr(data.error ?? "Payment failed (stub).");
         setSubmitting(false);
         return;
@@ -36,9 +38,14 @@ export function PayNowButton({ orderId }: { orderId: string }) {
 
   return (
     <div className="space-y-3">
-      <Button onClick={pay} disabled={submitting} size="lg" className="w-full">
-        {submitting ? "Processing…" : "Pay now (stub)"}
-      </Button>
+      <button
+        type="button"
+        onClick={pay}
+        disabled={submitting}
+        className="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? "Processing…" : "Pay now"}
+      </button>
       {err ? <p className="text-sm text-destructive">{err}</p> : null}
     </div>
   );

@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+
+// Compact teal text-link "Remove from List" for use inside wishlist rows.
 
 export function WishlistRemoveButton({ productId }: { productId: string }) {
   const router = useRouter();
@@ -18,9 +19,15 @@ export function WishlistRemoveButton({ productId }: { productId: string }) {
       router.refresh();
     });
   }
+
   return (
-    <Button variant="ghost" size="sm" disabled={pending} onClick={onClick} className="text-destructive">
-      Remove
-    </Button>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={pending}
+      className="cursor-pointer text-sm text-accent transition-colors duration-150 hover:text-accent/80 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "Removing…" : "Remove from List"}
+    </button>
   );
 }

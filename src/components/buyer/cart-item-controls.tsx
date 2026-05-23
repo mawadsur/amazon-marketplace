@@ -2,7 +2,9 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+
+// Amazon-style cart row controls: tiny Qty select + teal text links
+// for Delete / Save for later. All inline in one row.
 
 export function CartItemControls({
   productId,
@@ -36,38 +38,63 @@ export function CartItemControls({
     });
   }
 
+  function saveForLater() {
+    startTransition(async () => {
+      // Add to wishlist, then remove from cart.
+      await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      await fetch("/api/cart", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      router.refresh();
+    });
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={pending || qty <= 1}
-        onClick={() => setQty(qty - 1)}
-        aria-label="Decrease quantity"
-      >
-        −
-      </Button>
-      <span className="min-w-[2ch] text-center text-sm" aria-live="polite">
-        {qty}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <label className="inline-flex items-center gap-1.5 text-foreground">
+        <span className="text-muted-foreground">Qty:</span>
+        <select
+          aria-label="Quantity"
+          disabled={pending}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+          className="h-8 cursor-pointer rounded-md border border-border bg-background px-2 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="text-border" aria-hidden="true">
+        |
       </span>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={pending}
-        onClick={() => setQty(qty + 1)}
-        aria-label="Increase quantity"
-      >
-        +
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={pending}
+      <button
+        type="button"
         onClick={remove}
-        className="text-destructive"
+        disabled={pending}
+        className="cursor-pointer text-accent transition-colors duration-150 hover:text-accent/80 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Remove
-      </Button>
+        Delete
+      </button>
+      <span className="text-border" aria-hidden="true">
+        |
+      </span>
+      <button
+        type="button"
+        onClick={saveForLater}
+        disabled={pending}
+        className="cursor-pointer text-accent transition-colors duration-150 hover:text-accent/80 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Save for later
+      </button>
     </div>
   );
 }
