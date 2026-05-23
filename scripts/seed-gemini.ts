@@ -89,11 +89,19 @@ function pickN<T>(arr: T[], n: number): T[] {
   return out;
 }
 
+// Gemini occasionally emits raw control characters inside JSON strings
+// (e.g. unescaped newlines in description fields). JSON.parse rejects them.
+// Strip ASCII control chars except \t, \n, \r before parsing.
+function sanitizeJson(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, " ");
+}
+
 async function gemText(ai: GoogleGenAI, prompt: string, json = false): Promise<string> {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const res = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: json ? { responseMimeType: "application/json" } : undefined,
       });
@@ -115,7 +123,7 @@ async function gemImage(ai: GoogleGenAI, prompt: string): Promise<Buffer | null>
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await ai.models.generateContent({
-        model: "gemini-2.0-flash-exp-image-generation",
+        model: "gemini-2.5-flash-image",
         contents: prompt,
         config: { responseModalities: [Modality.TEXT, Modality.IMAGE] },
       });
@@ -178,8 +186,19 @@ Make products distinct from each other (different sub-products within ${shop.cra
   if (jsonStart === -1 || jsonEnd === -1) {
     throw new Error(`No JSON array in response: ${text.slice(0, 200)}`);
   }
-  const arr = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as ProductSpec[];
-  return arr.slice(0, count);
+  const arr = JSON.parse(sanitizeJson(text.slice(jsonStart, jsonEnd + 1))) as Array<
+    Omit<ProductSpec, "description"> & { description: string | string[] }
+  >;
+  // Gemini sometimes returns description as an array of bullet strings rather
+  // than a newline-joined single string. Coerce both shapes to a string.
+  return arr.slice(0, count).map((p) => ({
+    ...p,
+    description: Array.isArray(p.description)
+      ? p.description.join("\n")
+      : String(p.description ?? ""),
+    tags: Array.isArray(p.tags) ? p.tags.map(String) : [],
+    attributes: p.attributes && typeof p.attributes === "object" ? p.attributes : {},
+  }));
 }
 
 async function generateShopCopy(
@@ -216,7 +235,7 @@ Return JSON array of exactly ${count} objects: [{ "rating": 5, "body": "..." }, 
   const text = await gemText(ai, prompt, true);
   const jsonStart = text.indexOf("[");
   const jsonEnd = text.lastIndexOf("]");
-  const arr = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Array<{ rating: number; body: string }>;
+  const arr = JSON.parse(sanitizeJson(text.slice(jsonStart, jsonEnd + 1))) as Array<{ rating: number; body: string }>;
   return arr.map((r) => ({ rating: Math.max(1, Math.min(5, Math.round(r.rating))), body: r.body }));
 }
 
@@ -227,9 +246,12 @@ async function saveImage(
 ): Promise<{ url: string }> {
   if (buffer) {
     const fs = await import("node:fs/promises");
-    await fs.mkdir(resolve(destPath, ".."), { recursive: true });
-    await fs.writeFile(destPath, buffer);
-    const rel = destPath.replace(/^.*\/public/, "");
+    const sharp = (await import("sharp")).default;
+    // Always store WebP at quality 80 so committed catalog images stay small.
+    const webpPath = destPath.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+    await fs.mkdir(resolve(webpPath, ".."), { recursive: true });
+    await sharp(buffer).webp({ quality: 80 }).toFile(webpPath);
+    const rel = webpPath.replace(/^.*\/public/, "");
     return { url: rel };
   }
   // Fallback: deterministic placeholder
