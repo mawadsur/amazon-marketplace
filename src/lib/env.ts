@@ -38,6 +38,10 @@ const serverSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_PUBLIC_BASE_URL: z.string().url().optional(),
   REMOVE_BG_API_KEY: z.string().optional(),
+  HIGGSFIELD_API_KEY: z.string().optional(),
+  // Cost kill-switch: when "false", runtime avatar-video generation is skipped
+  // even if HIGGSFIELD_API_KEY is set. Absent/any-other-value = enabled.
+  AVATAR_VIDEO_ENABLED: z.string().optional(),
   SHIPROCKET_EMAIL: z.string().optional(),
   SHIPROCKET_PASSWORD: z.string().optional(),
   KYC_PROVIDER_API_KEY: z.string().optional(),
