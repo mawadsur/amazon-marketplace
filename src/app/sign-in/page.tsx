@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { SignInForm } from "@/components/seller/sign-in-form";
+import { BuyerAuthForm } from "@/components/buyer/buyer-auth-form";
 
-export const metadata = { title: "Sign in — Bazaar" };
+export const metadata = { title: "Sign in — Mirage" };
 
 export default function SignInPage({
   searchParams,
@@ -15,7 +16,7 @@ export default function SignInPage({
         href="/"
         className="mt-8 mb-4 cursor-pointer text-3xl font-bold tracking-tight text-foreground"
       >
-        Bazaar
+        Mirage
       </Link>
 
       <div className="w-full max-w-sm">
@@ -45,19 +46,22 @@ async function SignInResolver({
 
   if (as === "buyer") {
     return (
-      <div className="rounded-sm border border-border bg-card p-6">
-        <h1 className="text-xl font-medium text-foreground">Sign-In</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Buyer accounts use email and password. The buyer experience is being
-          built — check back soon.
-        </p>
-        <Link
-          href="/sign-in?as=seller"
-          className="amzn-link mt-3 inline-block text-sm"
-        >
-          Sign in as a seller instead
-        </Link>
-      </div>
+      <>
+        <div className="rounded-sm border border-border bg-card p-6">
+          <h1 className="text-xl font-medium text-foreground">Sign-In</h1>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Use your email and password to sign in or create an account.
+          </p>
+          <div className="mt-4">
+            <BuyerAuthForm callbackUrl={callbackUrl} />
+          </div>
+        </div>
+        <div className="mt-4 text-center">
+          <Link href="/sign-in?as=seller" className="amzn-link text-sm">
+            Are you a seller? Sign in here
+          </Link>
+        </div>
+      </>
     );
   }
 
@@ -77,15 +81,15 @@ async function SignInResolver({
         <div className="relative flex items-center">
           <div className="flex-grow border-t border-border" aria-hidden="true" />
           <span className="px-3 text-xs text-muted-foreground">
-            New to Bazaar?
+            New to Mirage?
           </span>
           <div className="flex-grow border-t border-border" aria-hidden="true" />
         </div>
         <Link
-          href="/sign-up"
+          href="/sign-in?as=buyer"
           className="mt-3 inline-flex w-full cursor-pointer items-center justify-center rounded-sm border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-muted"
         >
-          Create your Bazaar account
+          Create your Mirage account
         </Link>
       </div>
     </>

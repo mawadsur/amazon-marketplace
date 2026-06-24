@@ -88,6 +88,15 @@ export type CartTotals = {
   subtotalUsdCents: number;
 };
 
+/** Cheap read-only sum of cart quantities for the nav badge (no upsert). */
+export async function getCartItemCount(userId: string): Promise<number> {
+  const res = await prisma.cartItem.aggregate({
+    where: { cart: { userId } },
+    _sum: { qty: true },
+  });
+  return res._sum.qty ?? 0;
+}
+
 export function computeCartTotals(items: { qty: number; product: { priceUsdCents: number } }[]): CartTotals {
   let itemCount = 0;
   let subtotalUsdCents = 0;

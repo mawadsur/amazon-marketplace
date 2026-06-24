@@ -13,16 +13,24 @@ const PRICE_BANDS: Array<{ label: string; href: string }> = [
   { label: "Over $200", href: "/search?q=over+%24200" },
 ];
 
+const TIER_FILTERS: Array<{ tier: string; label: string }> = [
+  { tier: "vip", label: "A+ VIP only" },
+  { tier: "aplus", label: "A+ and above" },
+  { tier: "bplus", label: "B+ and above" },
+];
+
 export function FilterSidebar({
   categories,
   regions,
   activeCategory,
   activeRegion,
+  activeTier,
 }: {
   categories: Array<{ slug: string; name: string; count: number }>;
   regions: Array<{ region: string; shopCount: number }>;
   activeCategory?: string;
   activeRegion?: string;
+  activeTier?: string;
 }) {
   return (
     <aside className="rounded-sm border border-border bg-background p-4 text-sm">
@@ -99,30 +107,30 @@ export function FilterSidebar({
         </ul>
       </FacetGroup>
 
-      <FacetGroup label="Seller status">
+      <FacetGroup label="Seller quality">
         <ul className="space-y-1.5">
-          <li className="flex items-center gap-2">
-            <input
-              id="filter-verified"
-              type="checkbox"
-              className="h-4 w-4 cursor-pointer accent-accent"
-              disabled
-            />
-            <label htmlFor="filter-verified" className="cursor-pointer text-foreground">
-              Verified shops only
-            </label>
+          <li>
+            <Link
+              href="/search?sort=trust"
+              className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
+                !activeTier ? "font-bold text-foreground" : "text-foreground"
+              }`}
+            >
+              All sellers
+            </Link>
           </li>
-          <li className="flex items-center gap-2">
-            <input
-              id="filter-top-rated"
-              type="checkbox"
-              className="h-4 w-4 cursor-pointer accent-accent"
-              disabled
-            />
-            <label htmlFor="filter-top-rated" className="cursor-pointer text-foreground">
-              Top rated
-            </label>
-          </li>
+          {TIER_FILTERS.map((t) => (
+            <li key={t.tier}>
+              <Link
+                href={`/search?tier=${t.tier}&sort=trust`}
+                className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
+                  activeTier === t.tier ? "font-bold text-foreground" : "text-foreground"
+                }`}
+              >
+                {t.label}
+              </Link>
+            </li>
+          ))}
         </ul>
       </FacetGroup>
     </aside>

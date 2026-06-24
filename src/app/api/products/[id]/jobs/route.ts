@@ -36,9 +36,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     },
   });
 
-  const total = jobs.length;
-  const succeeded = jobs.filter((j) => j.status === "SUCCEEDED").length;
-  const failed = jobs.filter((j) => j.status === "FAILED").length;
+  // The avatar try-on video can take minutes to render — exclude it from the
+  // post-upload "done" gate so the seller isn't blocked. It finishes in the
+  // background and surfaces on the editor page.
+  const gating = jobs.filter((j) => j.kind !== "AVATAR_VIDEO");
+  const total = gating.length;
+  const succeeded = gating.filter((j) => j.status === "SUCCEEDED").length;
+  const failed = gating.filter((j) => j.status === "FAILED").length;
   const done = total > 0 && succeeded === total;
 
   return NextResponse.json({ product, jobs, total, succeeded, failed, done });

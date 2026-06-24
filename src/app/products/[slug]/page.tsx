@@ -30,6 +30,8 @@ import {
 import { isWishlisted } from "@/lib/wishlist";
 import { auth } from "@/lib/auth";
 import { formatRating } from "@/lib/format";
+import { effectiveTier } from "@/lib/tiers";
+import { TierBadge } from "@/components/safety/tier-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +108,15 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
           <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[40%_36%_22%]">
             {/* Col 1: Gallery */}
             <section aria-label="Product images">
-              <ProductGallery images={product.images} title={product.title} />
+              <ProductGallery
+                images={product.images}
+                title={product.title}
+                video={
+                  product.avatarVideoStatus === "READY" && product.avatarVideoUrl
+                    ? { url: product.avatarVideoUrl, poster: product.avatarVideoPoster }
+                    : null
+                }
+              />
             </section>
 
             {/* Col 2: Details */}
@@ -114,12 +124,15 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
               <h1 className="text-2xl font-medium leading-tight text-foreground">
                 {product.title}
               </h1>
-              <Link
-                href={`/shop/${product.shop.slug}`}
-                className="block text-sm text-accent hover:text-destructive hover:underline"
-              >
-                Visit the {product.shop.name} Store
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/shop/${product.shop.slug}`}
+                  className="text-sm text-accent hover:text-destructive hover:underline"
+                >
+                  Visit the {product.shop.name} Store
+                </Link>
+                <TierBadge tier={effectiveTier(product.shop)} />
+              </div>
 
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <StarRow value={filledStars} size="h-4 w-4" ariaLabel={`Average rating ${formatRating(product.ratingAvg)} out of 5`} />
@@ -197,7 +210,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                 <ul className="space-y-1.5 border-t border-border pt-3 text-xs">
                   {[
                     { Icon: Shield, label: "Secure transaction" },
-                    { Icon: Truck, label: "Ships from Bazaar" },
+                    { Icon: Truck, label: "Ships from Mirage" },
                     { Icon: Store, label: `Sold by ${product.shop.name}` },
                     { Icon: RotateCcw, label: "14-day returns" },
                   ].map(({ Icon, label }) => (

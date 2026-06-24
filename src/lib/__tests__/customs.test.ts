@@ -43,7 +43,7 @@ describe("estimateLanded", () => {
     expect(result.subtotalUsdCents).toBe(8_500);
     expect(result.shippingUsdCents).toBe(999);
     expect(result.dutyUsdCents).toBe(553); // 6.5% of $85
-    expect(result.serviceUsdCents).toBe(340); // 4% of $85
+    expect(result.serviceUsdCents).toBe(850); // 10% of $85
     expect(result.totalUsdCents).toBe(
       result.subtotalUsdCents +
         result.shippingUsdCents +

@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-// Amazon-style pill CTA. Orange = secondary "Add to Cart", Yellow = primary
-// "Buy Now"-equivalent. Both use a rounded-full pill shape and a thin border.
+// Mirage editorial CTA. "yellow" variant = primary wine "Buy Now",
+// "orange" variant = secondary gold "Add to Cart". Rectangular, uppercase.
 
 export function AddToCartButton({
   productId,
@@ -26,8 +26,8 @@ export function AddToCartButton({
 
   const baseColors =
     variant === "yellow"
-      ? "bg-primary text-primary-foreground hover:bg-primary/90 border border-[#FCD200]"
-      : "bg-secondary text-secondary-foreground hover:bg-secondary/90 border border-[#FF8F00]";
+      ? "bg-primary text-primary-foreground hover:bg-[#611A33] border border-primary"
+      : "bg-secondary text-secondary-foreground hover:bg-[#A87E2F] border border-secondary";
 
   function onClick() {
     if (!isAuthed) {
@@ -53,6 +53,7 @@ export function AddToCartButton({
         return;
       }
       setDone(true);
+      window.dispatchEvent(new Event("cart:changed"));
       router.refresh();
       setTimeout(() => setDone(false), 1500);
     });
@@ -77,7 +78,7 @@ export function AddToCartButton({
         type="button"
         onClick={onClick}
         disabled={pending}
-        className={`w-full cursor-pointer rounded-full px-4 py-2 text-sm font-medium shadow-sm transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${baseColors}`}
+        className={`w-full cursor-pointer rounded-sm px-4 py-2.5 text-sm font-semibold uppercase tracking-wide shadow-sm transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${baseColors}`}
       >
         {renderLabel}
       </button>

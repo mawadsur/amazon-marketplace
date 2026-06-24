@@ -48,6 +48,26 @@ export async function signedReadUrl(key: string, ttlSeconds = 300) {
   return getSignedUrl(client(), cmd, { expiresIn: ttlSeconds });
 }
 
+/**
+ * Server-side upload of raw bytes (e.g. an AI worker re-hosting a generated
+ * asset). Browser uploads should use `signedUploadUrl` instead.
+ */
+export async function putObject(
+  key: string,
+  body: Buffer | Uint8Array,
+  contentType: string,
+): Promise<void> {
+  if (!env.S3_BUCKET) throw new Error("S3_BUCKET not set");
+  await client().send(
+    new PutObjectCommand({
+      Bucket: env.S3_BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
+}
+
 export function publicUrl(key: string) {
   if (env.S3_PUBLIC_BASE_URL) return `${env.S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`;
   if (env.S3_ENDPOINT && env.S3_BUCKET) {

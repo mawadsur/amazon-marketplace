@@ -1,41 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
-  platformFeeUsdCents,
-  buyerServiceFeeUsdCents,
+  serviceChargeUsdCents,
   flatShippingUsdCents,
   shopNetUsdCents,
 } from "@/lib/fees";
 
-describe("platformFeeUsdCents", () => {
-  it("returns 10% of subtotal", () => {
-    expect(platformFeeUsdCents(10_000)).toBe(1_000); // $100 → $10
-    expect(platformFeeUsdCents(8_500)).toBe(850);
+describe("serviceChargeUsdCents", () => {
+  it("returns a flat 10% of subtotal", () => {
+    expect(serviceChargeUsdCents(10_000)).toBe(1_000); // $100 → $10
+    expect(serviceChargeUsdCents(50_000)).toBe(5_000); // $500 → $50
   });
 
   it("rounds to the nearest cent", () => {
-    expect(platformFeeUsdCents(99)).toBe(10); // 9.9¢ → 10¢
+    expect(serviceChargeUsdCents(99)).toBe(10); // 9.9¢ → 10¢
+  });
+
+  it("has no minimum floor", () => {
+    expect(serviceChargeUsdCents(100)).toBe(10); // 10% of $1.00 = 10¢
   });
 
   it("returns 0 for non-positive subtotals", () => {
-    expect(platformFeeUsdCents(0)).toBe(0);
-    expect(platformFeeUsdCents(-100)).toBe(0);
-  });
-});
-
-describe("buyerServiceFeeUsdCents", () => {
-  it("returns 4% of subtotal above the floor", () => {
-    expect(buyerServiceFeeUsdCents(10_000)).toBe(400); // $100 → $4.00
-    expect(buyerServiceFeeUsdCents(50_000)).toBe(2_000); // $500 → $20
-  });
-
-  it("enforces the $1.99 minimum floor", () => {
-    expect(buyerServiceFeeUsdCents(100)).toBe(199); // 4¢ would be below floor
-    expect(buyerServiceFeeUsdCents(4_000)).toBe(199); // 4% = $1.60 → floor
-  });
-
-  it("returns 0 for non-positive subtotals", () => {
-    expect(buyerServiceFeeUsdCents(0)).toBe(0);
-    expect(buyerServiceFeeUsdCents(-100)).toBe(0);
+    expect(serviceChargeUsdCents(0)).toBe(0);
+    expect(serviceChargeUsdCents(-100)).toBe(0);
   });
 });
 
@@ -46,8 +32,8 @@ describe("flatShippingUsdCents", () => {
 });
 
 describe("shopNetUsdCents", () => {
-  it("returns subtotal minus 10% platform fee", () => {
-    expect(shopNetUsdCents(10_000)).toBe(9_000); // $100 → $90 net
+  it("returns the full subtotal (seller is not deducted)", () => {
+    expect(shopNetUsdCents(10_000)).toBe(10_000); // seller nets their full price
   });
 
   it("never goes negative", () => {

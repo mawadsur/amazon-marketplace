@@ -23,6 +23,8 @@ export type QueueName =
   | "ai.lifestyle_photo"
   | "ai.search_intent"
   | "ai.story_video"
+  | "ai.avatar_video"
+  | "trust.recompute"
   | "payments.refund";
 
 const _queues = new Map<QueueName, Queue>();

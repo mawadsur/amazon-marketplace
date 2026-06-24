@@ -6,12 +6,29 @@
 import { prisma } from "@/lib/db";
 import { enqueueRefund } from "@/lib/payments";
 import { claimBuyerProtection, resolveBuyerProtection } from "@/lib/buyer-protection";
+import { enqueueTrustRecompute } from "@/lib/trust-score";
 import type {
   Dispute,
   DisputeReason,
   DisputeStatus,
   Prisma,
 } from "@prisma/client";
+
+// ---------------------------------------------------------------- helpers
+
+/** Recompute trust for every shop with an item in this order (best-effort). */
+async function recomputeShopsForOrder(orderId: string): Promise<void> {
+  try {
+    const items = await prisma.orderItem.findMany({
+      where: { orderId },
+      select: { shopId: true },
+    });
+    const shopIds = [...new Set(items.map((i) => i.shopId))];
+    await Promise.all(shopIds.map((id) => enqueueTrustRecompute(id)));
+  } catch {
+    /* best-effort — never block the dispute action */
+  }
+}
 
 // ---------------------------------------------------------------- open
 
@@ -78,6 +95,9 @@ export async function openDispute(input: OpenDisputeInput): Promise<Dispute> {
   } catch {
     /* ignore */
   }
+
+  // A new dispute drags the seller's trust score down — recompute.
+  await recomputeShopsForOrder(input.orderId);
 
   return dispute;
 }
@@ -175,6 +195,8 @@ export async function resolveDispute(input: ResolveDisputeInput): Promise<Disput
         /* ignore */
       }
     }
+    // Resolution may change the shop's standing — recompute trust.
+    await recomputeShopsForOrder(dispute.orderId);
     return updated;
   });
 }

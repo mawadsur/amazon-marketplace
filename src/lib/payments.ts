@@ -7,6 +7,7 @@ import { enqueuePayouts } from "@/lib/payouts";
 import { stripeRefund } from "@/lib/stubs";
 import { getQueue } from "@/lib/queue";
 import { createBuyerProtection } from "@/lib/buyer-protection";
+import { enqueueTrustRecompute } from "@/lib/trust-score";
 
 export type MarkCapturedInput = {
   orderId: string;
@@ -17,7 +18,12 @@ export type MarkCapturedInput = {
 export async function markPaymentCaptured(input: MarkCapturedInput): Promise<void> {
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
-    select: { id: true, status: true, payment: { select: { id: true, status: true } } },
+    select: {
+      id: true,
+      status: true,
+      payment: { select: { id: true, status: true } },
+      items: { select: { productId: true, qty: true, shopId: true } },
+    },
   });
   if (!order) throw new Error("ORDER_NOT_FOUND");
 
@@ -44,12 +50,34 @@ export async function markPaymentCaptured(input: MarkCapturedInput): Promise<voi
 
   // Side-effects after capture. Failures here should NOT roll back the
   // capture (the payment is real); admin can retry these out of band.
+  //
+  // Decrement inventory once per order (idempotent because we only reach here
+  // when the order was not already PAID/CAPTURED). Conditional decrement guards
+  // against overselling in the rare race where stock vanished between order
+  // creation and capture; a shortfall is logged for admin follow-up rather than
+  // failing the capture.
+  for (const it of order.items) {
+    const res = await prisma.product.updateMany({
+      where: { id: it.productId, inventory: { gte: it.qty } },
+      data: { inventory: { decrement: it.qty } },
+    });
+    if (res.count === 0) {
+      console.error(
+        `[payments] inventory shortfall on capture: order=${order.id} product=${it.productId} qty=${it.qty}`,
+      );
+    }
+  }
+
   await enqueuePayouts(order.id);
   try {
     await createBuyerProtection(order.id);
   } catch {
     /* protection creation is best-effort */
   }
+
+  // A captured order bumps each shop's sales signal — recompute trust scores.
+  const shopIds = [...new Set(order.items.map((it) => it.shopId))];
+  await Promise.all(shopIds.map((id) => enqueueTrustRecompute(id)));
 }
 
 export type RefundInput = { orderId: string; reason?: string };

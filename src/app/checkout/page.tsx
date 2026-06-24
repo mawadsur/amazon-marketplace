@@ -163,7 +163,7 @@ export default async function CheckoutPage() {
                   Place your order
                 </button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  By placing your order, you agree to Bazaar&apos;s terms and
+                  By placing your order, you agree to Mirage&apos;s terms and
                   conditions.
                 </p>
 
@@ -187,7 +187,7 @@ export default async function CheckoutPage() {
                     />
                   ) : null}
                   <Row
-                    label="Service fee:"
+                    label="Service charge (10%):"
                     value={formatUsd(landed.serviceUsdCents)}
                   />
                   <hr className="border-border" />

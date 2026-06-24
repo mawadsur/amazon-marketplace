@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeTrustScore } from "@/lib/trust-score";
+import { tierForScore, effectiveTier, parseTierParam } from "@/lib/tiers";
 
 const baseInputs = {
   shopStatus: "PENDING_REVIEW" as const,
@@ -103,5 +104,42 @@ describe("computeTrustScore", () => {
     // 25 + 25 + 19.6→20 + 20 (sales capped) + 10 (tenure 90+) = 100 (capped)
     expect(r.score).toBe(100);
     expect(r.tier).toBe("TOP_RATED");
+  });
+});
+
+describe("tierForScore", () => {
+  it("maps scores to quality tiers", () => {
+    expect(tierForScore(90)).toBe("VIP");
+    expect(tierForScore(85)).toBe("VIP");
+    expect(tierForScore(70)).toBe("APLUS");
+    expect(tierForScore(69)).toBe("BPLUS");
+    expect(tierForScore(50)).toBe("BPLUS");
+    expect(tierForScore(49)).toBe("STANDARD");
+    expect(tierForScore(0)).toBe("STANDARD");
+  });
+});
+
+describe("effectiveTier", () => {
+  it("derives from the score by default", () => {
+    expect(effectiveTier({ trustScore: 72 })).toBe("APLUS");
+    expect(effectiveTier({ trustScore: 55, manualTier: null })).toBe("BPLUS");
+  });
+
+  it("lets a valid manual override win", () => {
+    expect(effectiveTier({ trustScore: 55, manualTier: "VIP" })).toBe("VIP");
+  });
+
+  it("ignores an invalid manual override", () => {
+    expect(effectiveTier({ trustScore: 72, manualTier: "GOLD" })).toBe("APLUS");
+  });
+});
+
+describe("parseTierParam", () => {
+  it("parses tier query values", () => {
+    expect(parseTierParam("vip")).toBe("VIP");
+    expect(parseTierParam("aplus")).toBe("APLUS");
+    expect(parseTierParam("b+")).toBe("BPLUS");
+    expect(parseTierParam("nonsense")).toBeNull();
+    expect(parseTierParam(undefined)).toBeNull();
   });
 });

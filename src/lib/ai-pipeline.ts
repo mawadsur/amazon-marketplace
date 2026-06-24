@@ -15,13 +15,14 @@ import { prisma } from "@/lib/db";
 import { getQueue, type QueueName } from "@/lib/queue";
 
 const QUEUE_FOR: Record<
-  "BACKGROUND_REMOVAL" | "DESCRIPTION" | "PRICING_SUGGESTION" | "CATEGORIZATION",
+  "BACKGROUND_REMOVAL" | "DESCRIPTION" | "PRICING_SUGGESTION" | "CATEGORIZATION" | "AVATAR_VIDEO",
   QueueName
 > = {
   BACKGROUND_REMOVAL: "ai.background_removal",
   DESCRIPTION: "ai.description",
   PRICING_SUGGESTION: "ai.pricing",
   CATEGORIZATION: "ai.categorization",
+  AVATAR_VIDEO: "ai.avatar_video",
 };
 
 export const PIPELINE_KINDS: AiJobKind[] = [
@@ -29,7 +30,14 @@ export const PIPELINE_KINDS: AiJobKind[] = [
   "DESCRIPTION",
   "PRICING_SUGGESTION",
   "CATEGORIZATION",
+  // AVATAR_VIDEO's row is created up-front (so the status UI shows it) but it's
+  // enqueued later — after BG removal succeeds, since the clean cutout is the
+  // best input. See enqueueAvatarVideo().
+  "AVATAR_VIDEO",
 ];
+
+/** Pipeline kinds that are NOT enqueued immediately in startPipeline. */
+const DEFERRED_KINDS = new Set<AiJobKind>(["CATEGORIZATION", "AVATAR_VIDEO"]);
 
 export interface PipelineInput {
   productId: string;
@@ -61,9 +69,9 @@ export async function startPipeline(input: PipelineInput) {
     ),
   );
 
-  // Enqueue the three independent jobs. Categorization is deferred.
+  // Enqueue the independent jobs now. Categorization + avatar video are deferred.
   for (const job of jobs) {
-    if (job.kind === "CATEGORIZATION") continue;
+    if (DEFERRED_KINDS.has(job.kind)) continue;
     const queueName = QUEUE_FOR[job.kind as keyof typeof QUEUE_FOR];
     await getQueue(queueName).add(job.kind, {
       aiJobId: job.id,
@@ -72,6 +80,32 @@ export async function startPipeline(input: PipelineInput) {
   }
 
   return jobs;
+}
+
+/**
+ * Enqueue the AVATAR_VIDEO job after background removal succeeds (the clean
+ * cutout is the best input). Flips the product to QUEUED so the PDP/editor can
+ * show "generating". Honors the AVATAR_VIDEO_ENABLED kill-switch.
+ * `attempts: 2` keeps Higgsfield credit spend bounded on flaky renders.
+ */
+export async function enqueueAvatarVideo(productId: string) {
+  const { env } = await import("@/lib/env");
+  if (env.AVATAR_VIDEO_ENABLED === "false") return;
+
+  const job = await prisma.aiJob.findFirst({
+    where: { productId, kind: "AVATAR_VIDEO", status: "QUEUED" },
+  });
+  if (!job) return;
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { avatarVideoStatus: "QUEUED" },
+  });
+  await getQueue("ai.avatar_video").add(
+    "AVATAR_VIDEO",
+    { aiJobId: job.id, productId },
+    { attempts: 2, backoff: { type: "exponential", delay: 10_000 }, removeOnComplete: { age: 86_400 } },
+  );
 }
 
 /**
