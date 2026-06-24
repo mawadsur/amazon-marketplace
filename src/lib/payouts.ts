@@ -13,7 +13,8 @@ export type EnqueuePayoutsResult = {
 /**
  * For each shop with items in this order:
  *   - subtotal = sum(qty * unitPriceUsdCents) for that shop's order items
- *   - net (USD cents) = subtotal − 10% platform fee
+ *   - net (USD cents) = full shop subtotal (the 10% platform fee is collected
+ *     from the buyer at checkout, NOT deducted from the seller here)
  *   - amount (INR paise) = net converted via FX stub
  *   - create Payout row, call razorpay stub, persist payoutId
  *

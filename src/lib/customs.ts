@@ -1,8 +1,8 @@
 // Customs + landed-cost estimation (D4).
 //
 // At checkout, the buyer sees the true landed cost upfront — items + shipping
-// + estimated US import duty + service fee. Reduces the #1 stated cross-border
-// risk (surprise duties at delivery → disputes / refunds).
+// + estimated US import duty + a flat 10% service charge. Reduces the #1 stated
+// cross-border risk (surprise duties at delivery → disputes / refunds).
 //
 // Duty rates here are illustrative MFN approximations from the US HTS for the
 // three pilot categories (handicrafts, textiles, jewelry). Real classifications
@@ -11,7 +11,7 @@
 
 import {
   flatShippingUsdCents,
-  buyerServiceFeeUsdCents,
+  serviceChargeUsdCents,
 } from "@/lib/fees";
 
 // ---------------------------------------------------------------- HS / duty
@@ -104,7 +104,8 @@ export type LandedBreakdown = {
 
 /**
  * Compute the landed cost for a set of items being shipped to a destination.
- * Shipping is the flat MVP rate (Module 4); service fee comes from src/lib/fees.ts.
+ * Shipping is the flat MVP rate (Module 4); the 10% service charge comes from
+ * src/lib/fees.ts.
  */
 export function estimateLanded(
   items: LandedItem[],
@@ -129,7 +130,7 @@ export function estimateLanded(
   const subtotal = lines.reduce((s, l) => s + l.lineSubtotalUsdCents, 0);
   const shipping = flatShippingUsdCents();
   const duty = lines.reduce((s, l) => s + l.lineDutyUsdCents, 0);
-  const service = buyerServiceFeeUsdCents(subtotal);
+  const service = serviceChargeUsdCents(subtotal);
   const total = subtotal + shipping + duty + service;
 
   return {
