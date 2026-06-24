@@ -46,6 +46,8 @@ export async function listShops(filter: ShopFilter = {}) {
       logoUrl: true,
       bannerUrl: true,
       badge: true,
+      trustScore: true,
+      manualTier: true,
       _count: { select: { products: { where: { status: "PUBLISHED" } } } },
     },
   });
@@ -69,7 +71,17 @@ export async function listProducts(filter: ProductFilter = {}) {
       title: true,
       priceUsdCents: true,
       priceInrPaise: true,
-      shop: { select: { name: true, slug: true, region: true, city: true } },
+      shop: {
+        select: {
+          name: true,
+          slug: true,
+          region: true,
+          city: true,
+          badge: true,
+          trustScore: true,
+          manualTier: true,
+        },
+      },
       images: {
         orderBy: { position: "asc" },
         take: 1,
@@ -166,7 +178,17 @@ const SEARCH_SELECT = {
   description: true,
   priceUsdCents: true,
   priceInrPaise: true,
-  shop: { select: { name: true, slug: true, region: true, category: true } },
+  shop: {
+    select: {
+      name: true,
+      slug: true,
+      region: true,
+      category: true,
+      badge: true,
+      trustScore: true,
+      manualTier: true,
+    },
+  },
   images: { orderBy: { position: "asc" as const }, take: 1, select: { url: true } },
   category: { select: { slug: true, name: true } },
 } satisfies Prisma.ProductSelect;
@@ -176,12 +198,21 @@ const SEARCH_SELECT = {
  * intent, ANDs keyword ILIKE on top. Falls back to plain ILIKE on the raw
  * query when the intent is empty (e.g. Claude parsed it as pure noise).
  */
-export async function searchWithIntent(intent: SearchIntent) {
+export type SearchOptions = {
+  /** Hide products from shops below this trust score (tier floor). */
+  minScore?: number;
+  /** "trust" sorts by seller trust score desc; default is recency. */
+  sort?: "recent" | "trust";
+};
+
+export async function searchWithIntent(intent: SearchIntent, opts: SearchOptions = {}) {
+  const minScore = opts.minScore && opts.minScore > 0 ? opts.minScore : 0;
   const haveStructured =
     intent.categories.length > 0 ||
     intent.regions.length > 0 ||
     intent.priceMaxUsdCents !== null ||
-    intent.priceMinUsdCents !== null;
+    intent.priceMinUsdCents !== null ||
+    minScore > 0;
   const haveKeywords = intent.keywords.length > 0;
 
   if (!haveStructured && !haveKeywords) {
@@ -201,6 +232,7 @@ export async function searchWithIntent(intent: SearchIntent) {
   // Shop filter (region + always APPROVED via PUBLISHED_PRODUCT_WHERE).
   const shopFilter: Prisma.ShopWhereInput = { status: "APPROVED" as const };
   if (intent.regions.length > 0) shopFilter.region = { in: intent.regions };
+  if (minScore > 0) shopFilter.trustScore = { gte: minScore };
 
   // Category match against either the Category table OR the Shop.category
   // free-text column (covers shops whose products haven't been categorized yet).
@@ -230,10 +262,15 @@ export async function searchWithIntent(intent: SearchIntent) {
     ...(ands.length > 0 ? { AND: ands } : {}),
   };
 
+  const orderBy: Prisma.ProductOrderByWithRelationInput[] =
+    opts.sort === "trust"
+      ? [{ shop: { trustScore: "desc" } }, { publishedAt: "desc" }]
+      : [{ publishedAt: "desc" }];
+
   return prisma.product.findMany({
     where,
     take: 60,
-    orderBy: [{ publishedAt: "desc" }],
+    orderBy,
     select: SEARCH_SELECT,
   });
 }
@@ -279,7 +316,9 @@ const RAIL_SELECT = {
   title: true,
   priceUsdCents: true,
   priceInrPaise: true,
-  shop: { select: { name: true, slug: true, region: true, badge: true } },
+  shop: {
+    select: { name: true, slug: true, region: true, badge: true, trustScore: true, manualTier: true },
+  },
   images: { orderBy: { position: "asc" as const }, take: 1, select: { url: true } },
 } satisfies Prisma.ProductSelect;
 

@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { formatUsd, approxInrFromUsdCents } from "@/lib/format";
+import { effectiveTier } from "@/lib/tiers";
+import { TierBadge } from "@/components/safety/tier-badge";
 
 export type ProductCardProduct = {
   slug: string;
@@ -16,6 +18,9 @@ export type ProductCardProduct = {
     region?: string | null;
     /** Optional verification tier; only VERIFIED + NEW produce a corner chip. */
     badge?: string | null;
+    /** Optional trust signals — when present, drive the seller quality-tier chip. */
+    trustScore?: number | null;
+    manualTier?: string | null;
   };
   /** Optional review aggregate for storefront/product detail callers. */
   ratingAvg?: number | null;
@@ -34,12 +39,6 @@ function stubRating(slug: string): { avg: number; count: number } {
   const avg = 3.6 + ((h % 14) * 0.1);
   const count = 12 + ((h >>> 4) % 476);
   return { avg: Math.round(avg * 10) / 10, count };
-}
-
-function deliveryDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 9);
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function splitPrice(cents: number): { dollars: string; cents: string } {
@@ -86,21 +85,28 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
   const avg = product.ratingAvg ?? stub.avg;
   const count = product.ratingCount ?? stub.count;
   const { dollars, cents } = splitPrice(product.priceUsdCents);
+  const tier =
+    product.shop.trustScore != null
+      ? effectiveTier({
+          trustScore: product.shop.trustScore,
+          manualTier: product.shop.manualTier,
+        })
+      : null;
   const badgeLabel =
     product.shop.badge === "VERIFIED"
-      ? "Bazaar's Choice"
+      ? "Mirage Edit"
       : product.shop.badge === "NEW"
-        ? "New"
+        ? "New In"
         : null;
 
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group block cursor-pointer rounded-sm border border-border bg-card p-3 transition-all duration-150 hover:border-accent/40 hover:shadow-md"
+      className="group block cursor-pointer"
     >
-      <div className="relative aspect-square w-full overflow-hidden rounded-sm bg-muted">
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm bg-muted">
         {badgeLabel ? (
-          <span className="absolute left-1.5 top-1.5 z-10 rounded-sm bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-foreground shadow-sm">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-sm bg-card/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm">
             {badgeLabel}
           </span>
         ) : null}
@@ -109,41 +115,38 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
           src={cover}
           alt={product.title}
           loading="lazy"
-          className="h-full w-full object-contain p-2"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
         />
       </div>
 
-      <div className="mt-2 space-y-1">
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground transition-colors group-hover:text-accent">
+      <div className="mt-3 space-y-1">
+        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
           {product.title}
         </h3>
 
         <StarRow avg={avg} count={count} />
 
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-xs align-top text-foreground">$</span>
-          <span className="text-xl font-bold tabular-nums leading-none text-foreground">
-            {dollars}
-          </span>
-          <span className="text-xs font-bold tabular-nums text-foreground align-top">
-            {cents}
+        <div className="flex items-baseline gap-2 pt-0.5">
+          <span className="font-display text-lg font-semibold tabular-nums leading-none text-foreground">
+            ${dollars}
+            <span className="text-sm">.{cents}</span>
           </span>
           <span className="text-[11px] font-normal text-muted-foreground">
             approx {approxInrFromUsdCents(product.priceUsdCents)}
           </span>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          FREE delivery <span className="font-medium text-foreground">{deliveryDate()}</span>
-        </p>
-
         {product.shop.region ? (
-          <p className="pt-0.5 text-[11px] text-muted-foreground">
-            from {product.shop.name} · {product.shop.region}
+          <p className="pt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {product.shop.name} · {product.shop.region}
           </p>
         ) : (
-          <p className="pt-0.5 text-[11px] text-muted-foreground">from {product.shop.name}</p>
+          <p className="pt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {product.shop.name}
+          </p>
         )}
+
+        {tier ? <TierBadge tier={tier} className="mt-1" /> : null}
       </div>
     </Link>
   );

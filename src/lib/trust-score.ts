@@ -5,7 +5,20 @@
 // badge UIs keep working without changes.
 
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import type { VerificationBadge } from "@prisma/client";
+
+// Quality-tier helpers live in the dependency-free src/lib/tiers.ts so client
+// components can use them too. Re-exported here for callers that already import
+// from trust-score.
+export {
+  type QualityTier,
+  tierForScore,
+  effectiveTier,
+  minScoreForTier,
+  parseTierParam,
+  MIN_BUYER_VISIBLE_SCORE,
+} from "@/lib/tiers";
 
 export type TrustInputs = {
   shopStatus: "PENDING_REVIEW" | "APPROVED" | "SUSPENDED" | "REJECTED";
@@ -161,7 +174,44 @@ export async function applyTrustScoreNow(shopId: string): Promise<TrustResult> {
   const result = await recomputeTrustScore(shopId);
   await prisma.shop.update({
     where: { id: shopId },
-    data: { trustScore: result.score, badge: result.tier },
+    data: { trustScore: result.score, badge: result.tier, trustScoreUpdatedAt: new Date() },
   });
   return result;
+}
+
+/**
+ * Schedule a trust-score recompute for a shop. Fired from event seams (review
+ * created, dispute opened/resolved, order completed). Uses the BullMQ queue
+ * when REDIS_URL is set; otherwise recomputes inline. Always best-effort — a
+ * recompute failure must never break the user action that triggered it.
+ */
+export async function enqueueTrustRecompute(shopId: string): Promise<void> {
+  if (!shopId) return;
+  if (!env.REDIS_URL) {
+    try {
+      await applyTrustScoreNow(shopId);
+    } catch (err) {
+      console.error(`[trust] inline recompute failed for ${shopId}:`, err);
+    }
+    return;
+  }
+  try {
+    const { getQueue } = await import("@/lib/queue");
+    await getQueue("trust.recompute").add(
+      "recompute",
+      { shopId },
+      {
+        attempts: 3,
+        backoff: { type: "exponential", delay: 5_000 },
+        removeOnComplete: { age: 3600, count: 1000 },
+      },
+    );
+  } catch (err) {
+    console.error(`[trust] enqueue failed for ${shopId}, recomputing inline:`, err);
+    try {
+      await applyTrustScoreNow(shopId);
+    } catch {
+      /* give up — best-effort */
+    }
+  }
 }

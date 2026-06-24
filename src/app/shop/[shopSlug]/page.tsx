@@ -8,7 +8,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 import { ProductCard } from "@/components/buyer/product-card";
 import { VerificationBadge } from "@/components/safety/verification-badge";
 import { TrustScoreBadge } from "@/components/safety/trust-score-badge";
+import { TierBadge } from "@/components/safety/tier-badge";
 import { getShopBySlug, regionNameToSlug } from "@/lib/catalog";
+import { effectiveTier } from "@/lib/tiers";
 import { parseStoryScript } from "@/lib/story-video";
 
 export const dynamic = "force-dynamic";
@@ -72,6 +74,7 @@ export default async function ShopPage(props: {
                   </Link>
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <TierBadge tier={effectiveTier(shop)} />
                   <VerificationBadge value={shop.badge} hideIfNone />
                   <TrustScoreBadge score={shop.trustScore} />
                 </div>
@@ -82,7 +85,7 @@ export default async function ShopPage(props: {
                 <p className="max-w-2xl">{shop.bio}</p>
               ) : (
                 <p className="max-w-2xl text-muted-foreground">
-                  A verified Bazaar shop based in {shop.city}, {shop.region}.
+                  A verified Mirage shop based in {shop.city}, {shop.region}.
                 </p>
               )}
               <p className="mt-3 text-xs text-muted-foreground">
@@ -128,6 +131,8 @@ export default async function ShopPage(props: {
                         slug: shop.slug,
                         region: shop.region,
                         badge: shop.badge,
+                        trustScore: shop.trustScore,
+                        manualTier: shop.manualTier,
                       },
                     }}
                   />

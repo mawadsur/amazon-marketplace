@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { rateLimit, clientKey, rateLimitHeaders } from "@/lib/ratelimit";
+import { enqueueTrustRecompute } from "@/lib/trust-score";
 
 const schema = z.object({
   productId: z.string().min(1),
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
   const product = await prisma.product.findUnique({
     where: { id: productId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, shopId: true },
   });
   if (!product) {
     return NextResponse.json({ error: "PRODUCT_NOT_FOUND" }, { status: 404 });
@@ -59,6 +60,9 @@ export async function POST(req: Request) {
     update: { rating, body: body ?? null },
     create: { productId, buyerId: session.user.id, rating, body: body ?? null },
   });
+
+  // A new/updated review moves the shop's trust score. Best-effort.
+  await enqueueTrustRecompute(product.shopId);
 
   return NextResponse.json({ review });
 }

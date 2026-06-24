@@ -16,17 +16,24 @@ import {
   listRegions,
 } from "@/lib/catalog";
 import { parseIntent, intentChips } from "@/lib/concierge";
+import { parseTierParam, minScoreForTier } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function SearchPage(props: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; tier?: string; sort?: string }>;
 }) {
-  const { q = "" } = await props.searchParams;
-  const intent = q ? await parseIntent(q) : null;
+  const { q = "", tier: tierParam, sort } = await props.searchParams;
+  const activeTier = parseTierParam(tierParam);
+  const minScore = activeTier ? minScoreForTier(activeTier) : 0;
+  const sortMode = sort === "trust" ? "trust" : "recent";
+  const hasCriteria = Boolean(q) || minScore > 0;
+  const intent = hasCriteria ? await parseIntent(q) : null;
   const [results, categories, regions] = await Promise.all([
-    intent ? searchWithIntent(intent) : Promise.resolve([]),
+    intent
+      ? searchWithIntent(intent, { minScore, sort: sortMode })
+      : Promise.resolve([]),
     listCategories(),
     listRegions(),
   ]);
@@ -110,6 +117,7 @@ export default async function SearchPage(props: {
                 regions={regions}
                 activeCategory={activeCategory}
                 activeRegion={activeRegion}
+                activeTier={activeTier ? activeTier.toLowerCase() : undefined}
               />
 
               <section className="rounded-sm border border-border bg-background p-4">

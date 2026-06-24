@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import { effectiveTier } from "@/lib/tiers";
+import { TierBadge } from "@/components/safety/tier-badge";
 
 export type ShopCardShop = {
   slug: string;
@@ -14,6 +16,8 @@ export type ShopCardShop = {
   logoUrl: string | null;
   bannerUrl: string | null;
   badge: string;
+  trustScore?: number | null;
+  manualTier?: string | null;
   _count?: { products: number };
 };
 
@@ -21,6 +25,10 @@ const FALLBACK_BANNER = "https://placehold.co/600x240/png?text=Shop";
 
 export function ShopCard({ shop }: { shop: ShopCardShop }) {
   const banner = shop.bannerUrl ?? FALLBACK_BANNER;
+  const tier =
+    shop.trustScore != null
+      ? effectiveTier({ trustScore: shop.trustScore, manualTier: shop.manualTier })
+      : null;
   const badgeLabel =
     shop.badge === "VERIFIED"
       ? "Verified"
@@ -59,6 +67,7 @@ export function ShopCard({ shop }: { shop: ShopCardShop }) {
           <MapPin className="h-3 w-3" aria-hidden />
           {shop.city}, {shop.region}
         </p>
+        {tier ? <TierBadge tier={tier} /> : null}
         {shop.bio ? (
           <p className="line-clamp-2 text-xs text-muted-foreground">{shop.bio}</p>
         ) : null}
