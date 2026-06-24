@@ -1,7 +1,7 @@
 // Currency + display formatting helpers for buyer surfaces.
 // Single source of truth — never inline currency math in components.
 
-import { FX_USD_TO_INR } from "@/lib/stubs";
+import { FX_USD_TO_INR } from "@/lib/fx";
 
 const usdFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",

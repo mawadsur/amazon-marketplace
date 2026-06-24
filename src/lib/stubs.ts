@@ -348,12 +348,7 @@ export async function aiCategorize(inp: {
 
 // ---------------------------------------------------------------- FX (Module 4)
 
-// Static stub FX rate; replace with a live FX provider later.
-export const FX_USD_TO_INR = 83.5;
-
-export function usdCentsToInrPaise(usdCents: number) {
-  return Math.round(usdCents * FX_USD_TO_INR);
-}
-export function inrPaiseToUsdCents(inrPaise: number) {
-  return Math.round(inrPaise / FX_USD_TO_INR);
-}
+// FX helpers now live in the dependency-free src/lib/fx.ts so client components
+// (via format.ts) don't pull this server module — and its env/prisma/SDK
+// imports — into the browser bundle. Re-exported here for back-compat.
+export { FX_USD_TO_INR, usdCentsToInrPaise, inrPaiseToUsdCents } from "@/lib/fx";
