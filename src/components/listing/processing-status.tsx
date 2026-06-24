@@ -11,7 +11,8 @@ type JobKind =
   | "CATEGORIZATION"
   | "TRANSLATION"
   | "LIFESTYLE_PHOTO"
-  | "SEARCH_INTENT";
+  | "SEARCH_INTENT"
+  | "AVATAR_VIDEO";
 
 interface JobRow {
   id: string;
@@ -37,6 +38,7 @@ const LABEL: Record<JobKind, string> = {
   TRANSLATION: "Translating",
   LIFESTYLE_PHOTO: "Lifestyle photo",
   SEARCH_INTENT: "Search tagging",
+  AVATAR_VIDEO: "Creating try-on video",
 };
 
 const ORDER: JobKind[] = [

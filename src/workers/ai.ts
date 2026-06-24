@@ -29,12 +29,14 @@ import {
   removeBackground,
   aiGenerateDescription,
   aiCategorize,
+  generateAvatarVideo,
   usdCentsToInrPaise,
 } from "@/lib/stubs";
 import { recommendPrice } from "@/lib/pricing";
-import { enqueueAfterCategorize } from "@/lib/ai-pipeline";
+import { enqueueAfterCategorize, enqueueAvatarVideo } from "@/lib/ai-pipeline";
 import { refundOrder, type RefundJobPayload } from "@/lib/payments";
 import { generateStoryScript, type StoryVideoJobPayload } from "@/lib/story-video";
+import { applyTrustScoreNow } from "@/lib/trust-score";
 
 export type AiJobPayload = { aiJobId: string; productId: string };
 
@@ -82,14 +84,18 @@ function startBackgroundRemoval() {
         orderBy: { position: "asc" },
       });
       if (!original) throw new Error("No ORIGINAL image to process");
-      const { outputUrl } = await removeBackground(original.url);
+      const { outputUrl, source } = await removeBackground({
+        imageUrl: original.url,
+        shopId: product.shopId,
+        productId: product.id,
+      });
       await prisma.productImage.create({
         data: {
           productId: product.id,
           url: outputUrl,
           kind: "BG_REMOVED",
           position: 1,
-          aiMetadata: { source: "stub", originalImageId: original.id },
+          aiMetadata: { source, originalImageId: original.id },
         },
       });
       return { outputUrl };
@@ -217,6 +223,83 @@ function startRefunds() {
   });
 }
 
+// ---------------------------------------------------------------- avatar video
+
+function startAvatarVideo() {
+  return makeWorker<AiJobPayload>("ai.avatar_video", async (j) => {
+    return runJob(j.data, async (aiJob, product) => {
+      try {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { avatarVideoStatus: "RUNNING" },
+        });
+
+        // Prefer the clean cutout; fall back to the original photo.
+        const img =
+          (await prisma.productImage.findFirst({
+            where: { productId: product.id, kind: "BG_REMOVED" },
+            orderBy: { position: "asc" },
+          })) ??
+          (await prisma.productImage.findFirst({
+            where: { productId: product.id, kind: "ORIGINAL" },
+            orderBy: { position: "asc" },
+          }));
+        if (!img) throw new Error("No image to animate");
+
+        const shop = await prisma.shop.findUniqueOrThrow({ where: { id: product.shopId } });
+        const out = await generateAvatarVideo({
+          imageUrl: img.url,
+          title: product.title,
+          category: shop.category,
+          attributes: (product.attributes as Record<string, unknown> | null) ?? null,
+          shopId: product.shopId,
+          productId: product.id,
+        });
+
+        if (out.source === "stub") {
+          // No real video — leave the product image-only (no broken player).
+          await prisma.product.update({
+            where: { id: product.id },
+            data: { avatarVideoStatus: "NONE" },
+          });
+          return out;
+        }
+
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            avatarVideoUrl: out.videoUrl,
+            avatarVideoPoster: out.posterUrl,
+            avatarVideoStatus: "READY",
+          },
+        });
+        await prisma.aiJob.update({
+          where: { id: aiJob.id },
+          data: { costUsdMicros: out.costUsdMicros },
+        });
+        return out;
+      } catch (err) {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { avatarVideoStatus: "FAILED" },
+        });
+        throw err;
+      }
+    });
+  });
+}
+
+// ---------------------------------------------------------------- trust recompute
+
+type TrustRecomputePayload = { shopId: string };
+
+function startTrustRecompute() {
+  return makeWorker<TrustRecomputePayload>("trust.recompute", async (j) => {
+    const result = await applyTrustScoreNow(j.data.shopId);
+    return { score: result.score, tier: result.tier };
+  });
+}
+
 // ---------------------------------------------------------------- story video
 
 function startStoryVideo() {
@@ -238,6 +321,8 @@ const workers = [
   startCategorization(),
   startRefunds(),
   startStoryVideo(),
+  startTrustRecompute(),
+  startAvatarVideo(),
 ];
 
 const queueNames: QueueName[] = [
@@ -247,12 +332,25 @@ const queueNames: QueueName[] = [
   "ai.categorization",
   "payments.refund",
   "ai.story_video",
+  "trust.recompute",
+  "ai.avatar_video",
 ];
 
+// Reference workers by name so registration order can't silently break the
+// completion hooks below.
+const byQueue = new Map(workers.map((w) => [w.name, w]));
+
 // Description finishing triggers categorization (sequential dependency).
-workers[1]?.on("completed", async (job) => {
+byQueue.get("ai.description")?.on("completed", async (job) => {
   const payload = job.data as AiJobPayload;
   await enqueueAfterCategorize(payload.productId);
+});
+
+// Background removal finishing triggers avatar-video generation (the clean
+// cutout is the best input). Works in stub mode too — the BG stub still fires.
+byQueue.get("ai.background_removal")?.on("completed", async (job) => {
+  const payload = job.data as AiJobPayload;
+  await enqueueAvatarVideo(payload.productId);
 });
 
 for (const w of workers) {
