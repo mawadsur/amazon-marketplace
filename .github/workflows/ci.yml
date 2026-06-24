@@ -1,18 +1,13 @@
-name: CI/CD
+name: CI
 
-# Validate every PR and every push to master; deploy master to Vercel production.
+# Validation gate for every PR and every push to master.
 #
-# Required repo secrets for the deploy job (Settings → Secrets and variables → Actions):
-#   VERCEL_TOKEN       - Vercel account token (vercel.com/account/tokens)
-#   VERCEL_ORG_ID      - from `vercel link` → .vercel/project.json ("orgId")
-#   VERCEL_PROJECT_ID  - from `vercel link` → .vercel/project.json ("projectId")
-#
-# Runtime env (DATABASE_URL, ANTHROPIC_API_KEY, S3_*, etc.) lives in the Vercel
-# project's Production environment and is pulled by `vercel pull` at deploy time —
-# do NOT duplicate those as GitHub secrets.
-#
-# NOTE: if this repo also has Vercel's Git integration auto-deploying master,
-# disable that project's production Git auto-deploy so you don't double-deploy.
+# Deployment is handled by Vercel's native Git integration (it auto-deploys
+# master), so this workflow does NOT deploy — it only validates. To have GitHub
+# Actions own the deploy instead, add a deploy job using the Vercel CLI
+# (vercel pull / build / deploy --prebuilt --prod) with VERCEL_TOKEN /
+# VERCEL_ORG_ID / VERCEL_PROJECT_ID secrets, and turn off Vercel's production
+# Git auto-deploy to avoid double-deploying.
 
 on:
   push:
@@ -22,7 +17,7 @@ on:
 
 # A newer commit on the same ref cancels the in-flight run.
 concurrency:
-  group: cicd-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -63,39 +58,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-  deploy:
-    name: Deploy to Vercel (production)
-    needs: validate
-    # Only deploy on a direct push to master — never on PRs.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel production env
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build with Vercel (uses production env)
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy prebuilt to production
-        id: deploy
-        run: |
-          url="$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed → $url"
