@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill } from "@/components/listing/status-pill";
 import { DraftEditor } from "@/components/listing/draft-editor";
+import { AvatarVideoCard } from "@/components/listing/avatar-video-card";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,23 @@ export default async function SellerProductPage({
         </CardContent>
       </Card>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Try-on video</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            An AI-generated short video of a model showing your item.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <AvatarVideoCard
+            productId={product.id}
+            status={product.avatarVideoStatus}
+            url={product.avatarVideoUrl}
+            poster={product.avatarVideoPoster}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Edit listing</CardTitle>
@@ -87,6 +105,7 @@ export default async function SellerProductPage({
               title: product.title || "",
               description: product.description || "",
               priceUsdCents: product.priceUsdCents,
+              inventory: product.inventory,
               tags: product.tags.map((t) => t.name),
               isPublishable,
             }}

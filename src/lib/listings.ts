@@ -15,7 +15,7 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { publicUrl } from "@/lib/storage";
 import { usdCentsToInrPaise } from "@/lib/stubs";
-import { startPipeline } from "@/lib/ai-pipeline";
+import { startPipeline, enqueueAvatarVideo } from "@/lib/ai-pipeline";
 
 // ---------------------------------------------------------------- helpers
 
@@ -111,6 +111,7 @@ const updateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   description: z.string().max(8000).optional(),
   priceUsdCents: z.number().int().min(0).max(10_000_000).optional(),
+  inventory: z.number().int().min(0).max(1_000_000).optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
 });
 
@@ -131,6 +132,7 @@ export async function updateDraft(productId: string, patch: UpdateDraftPatch) {
     data.priceUsdCents = parsed.priceUsdCents;
     data.priceInrPaise = usdCentsToInrPaise(parsed.priceUsdCents);
   }
+  if (parsed.inventory !== undefined) data.inventory = parsed.inventory;
 
   await prisma.product.update({ where: { id: productId }, data });
 
@@ -158,6 +160,33 @@ export async function updateDraft(productId: string, patch: UpdateDraftPatch) {
 
   revalidatePath(`/seller/products/${productId}`);
   revalidatePath("/seller/products");
+}
+
+// ---------------------------------------------------------------- regenerateAvatarVideo
+
+/**
+ * (Re)generate the avatar try-on video for a seller's product. Creates a fresh
+ * QUEUED AVATAR_VIDEO job and enqueues it. Used by the editor's Generate / Retry
+ * / Regenerate buttons (and for seeded/legacy products with no pipeline run).
+ */
+export async function regenerateAvatarVideo(productId: string) {
+  const shop = await getCurrentShop();
+  const product = await prisma.product.findFirst({
+    where: { id: productId, shopId: shop.id },
+    select: { id: true },
+  });
+  if (!product) throw new Error("PRODUCT_NOT_FOUND");
+
+  await prisma.aiJob.create({
+    data: { productId, kind: "AVATAR_VIDEO", status: "QUEUED", input: {} },
+  });
+  await prisma.product.update({
+    where: { id: productId },
+    data: { avatarVideoStatus: "QUEUED" },
+  });
+  await enqueueAvatarVideo(productId);
+
+  revalidatePath(`/seller/products/${productId}`);
 }
 
 // ---------------------------------------------------------------- publishProduct

@@ -40,6 +40,7 @@ export default async function SellerProductsPage() {
       title: true,
       status: true,
       priceUsdCents: true,
+      inventory: true,
       updatedAt: true,
       images: {
         where: { kind: "ORIGINAL" },
@@ -96,6 +97,11 @@ export default async function SellerProductsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <span
+                    className={`text-xs tabular-nums ${p.inventory > 0 ? "text-muted-foreground" : "text-red-600"}`}
+                  >
+                    {p.inventory > 0 ? `${p.inventory} in stock` : "Out of stock"}
+                  </span>
                   <span className="text-sm tabular-nums">
                     ${(p.priceUsdCents / 100).toFixed(2)}
                   </span>

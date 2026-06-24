@@ -17,6 +17,7 @@ const schema = z.object({
   priceUsd: z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/, "Use dollar format, e.g. 12.50"),
+  inventory: z.string().regex(/^\d+$/, "Whole number, e.g. 12"),
   tags: z.string().max(400),
 });
 type Values = z.infer<typeof schema>;
@@ -27,6 +28,7 @@ interface Props {
     title: string;
     description: string;
     priceUsdCents: number;
+    inventory: number;
     tags: string[];
     isPublishable: boolean;
   };
@@ -44,6 +46,7 @@ export function DraftEditor({ productId, initial }: Props) {
       title: initial.title,
       description: initial.description,
       priceUsd: (initial.priceUsdCents / 100).toFixed(2),
+      inventory: String(initial.inventory),
       tags: initial.tags.join(", "),
     },
   });
@@ -53,6 +56,7 @@ export function DraftEditor({ productId, initial }: Props) {
       title: v.title,
       description: v.description,
       priceUsdCents: Math.round(parseFloat(v.priceUsd) * 100),
+      inventory: parseInt(v.inventory, 10),
       tags: v.tags
         .split(",")
         .map((t) => t.trim())
@@ -130,6 +134,14 @@ export function DraftEditor({ productId, initial }: Props) {
             form.setValue("priceUsd", priceUsd, { shouldDirty: true, shouldValidate: true })
           }
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="inventory">Inventory (units in stock)</Label>
+        <Input id="inventory" inputMode="numeric" {...form.register("inventory")} />
+        {form.formState.errors.inventory ? (
+          <p className="text-xs text-red-600">{form.formState.errors.inventory.message}</p>
+        ) : null}
       </div>
 
       <div className="space-y-2">

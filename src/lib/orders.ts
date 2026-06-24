@@ -56,6 +56,8 @@ export async function createOrderFromCart(
               status: true,
               shopId: true,
               priceUsdCents: true,
+              inventory: true,
+              title: true,
               shop: { select: { category: true } },
             },
           },
@@ -66,6 +68,7 @@ export async function createOrderFromCart(
   if (!cart || cart.items.length === 0) throw new Error("CART_EMPTY");
   for (const it of cart.items) {
     if (it.product.status !== "PUBLISHED") throw new Error("PRODUCT_UNAVAILABLE");
+    if (it.product.inventory < it.qty) throw new Error("OUT_OF_STOCK");
   }
 
   // Compute landed cost (subtotal + shipping + duty + service) for the actual

@@ -23,6 +23,7 @@ export function CartItemControls({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ productId, qty: next, mode: "set" }),
       });
+      window.dispatchEvent(new Event("cart:changed"));
       router.refresh();
     });
   }
@@ -34,6 +35,7 @@ export function CartItemControls({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ productId }),
       });
+      window.dispatchEvent(new Event("cart:changed"));
       router.refresh();
     });
   }
@@ -51,6 +53,7 @@ export function CartItemControls({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ productId }),
       });
+      window.dispatchEvent(new Event("cart:changed"));
       router.refresh();
     });
   }
