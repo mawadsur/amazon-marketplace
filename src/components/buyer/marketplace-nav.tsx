@@ -12,7 +12,6 @@ const SUB_LINKS: { href: string; label: string }[] = [
   { href: "/shop/category/jewelry", label: "Jewelry" },
   { href: "/shop/category/handicrafts", label: "Accessories" },
   { href: "/search?regional=1", label: "Bridal Edit" },
-  { href: "/seller", label: "Sell with Us" },
   { href: "/legal/returns", label: "Sizing & Alterations" },
 ];
 
