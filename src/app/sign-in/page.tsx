@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SignInForm } from "@/components/seller/sign-in-form";
 import { BuyerAuthForm } from "@/components/buyer/buyer-auth-form";
 
-export const metadata = { title: "Sign in — Mirage" };
+export const metadata = { title: "Sign in — Shezmin" };
 
 export default function SignInPage({
   searchParams,
@@ -16,7 +16,7 @@ export default function SignInPage({
         href="/"
         className="mt-10 mb-6 cursor-pointer font-display text-4xl font-bold tracking-tight text-primary"
       >
-        Mirage
+        Shezmin
       </Link>
 
       <div className="w-full max-w-sm">
@@ -85,7 +85,7 @@ async function SignInResolver({
         <div className="relative flex items-center">
           <div className="flex-grow border-t border-border" aria-hidden="true" />
           <span className="px-3 text-xs text-muted-foreground">
-            New to Mirage?
+            New to Shezmin?
           </span>
           <div className="flex-grow border-t border-border" aria-hidden="true" />
         </div>
@@ -93,7 +93,7 @@ async function SignInResolver({
           href="/sign-in?as=buyer"
           className="mt-3 inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          Create your Mirage account
+          Create your Shezmin account
         </Link>
       </div>
     </>

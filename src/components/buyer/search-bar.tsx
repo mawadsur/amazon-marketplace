@@ -12,7 +12,7 @@ const CATEGORIES: { value: string; label: string }[] = [
   { value: "sellers", label: "Boutiques" },
 ];
 
-const RECENT_KEY = "mirage.recentSearches";
+const RECENT_KEY = "shezmin.recentSearches";
 const MAX_RECENT = 6;
 
 type Suggestion =
@@ -325,7 +325,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
       </select>
 
       <label htmlFor="search-q" className="sr-only">
-        Search Mirage Sarees
+        Search Shezmin
       </label>
       <input
         ref={inputRef}
@@ -532,7 +532,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
                       <span className="flex-1 truncate text-foreground">
                         {s.kind === "raw" ? (
                           <>
-                            Search Mirage for{" "}
+                            Search Shezmin for{" "}
                             <span className="font-medium">&ldquo;{s.text}&rdquo;</span>
                           </>
                         ) : (

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-// Mirage editorial CTA. "yellow" variant = primary wine "Buy Now",
+// Shezmin editorial CTA. "yellow" variant = primary wine "Buy Now",
 // "orange" variant = secondary gold "Add to Cart". Rectangular, uppercase.
 
 export function AddToCartButton({

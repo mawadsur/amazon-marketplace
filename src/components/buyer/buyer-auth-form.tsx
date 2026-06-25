@@ -152,7 +152,7 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
           }}
           className="rounded-sm text-xs font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          New to Mirage? Create an account
+          New to Shezmin? Create an account
         </button>
       </form>
     );

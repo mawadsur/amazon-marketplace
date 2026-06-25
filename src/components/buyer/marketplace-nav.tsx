@@ -23,7 +23,7 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
     <header className="sticky top-0 z-30 w-full">
       {/* Promo strip */}
       <div className="flex h-9 w-full items-center justify-center bg-subheader px-4 text-center text-xs font-medium uppercase tracking-[0.18em] text-background">
-        Free shipping on orders over $99 · Atlanta&apos;s Indian clothing house since 2001
+        Free shipping on orders over $99 · Curated clothing, direct from India
       </div>
 
       {/* Top bar */}
@@ -32,13 +32,13 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
         <Link
           href="/"
           className="flex flex-col leading-none"
-          aria-label="Mirage Sarees home"
+          aria-label="Shezmin home"
         >
           <span className="font-display text-2xl font-semibold tracking-tight text-primary sm:text-[28px]">
-            Mirage
+            Shezmin
           </span>
           <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-muted-foreground">
-            Sarees
+            Clothing
           </span>
         </Link>
 
@@ -59,7 +59,7 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
           <SearchBar initialQuery={initialQuery} />
         </div>
 
-        {/* Concierge */}
+        {/* Assistant */}
         <ConciergeDrawer />
 
         {/* Account */}
@@ -72,15 +72,6 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
             Account &amp; Lists
             <ChevronDown className="h-3 w-3" aria-hidden="true" />
           </span>
-        </Link>
-
-        {/* Orders */}
-        <Link
-          href="/buyer/orders"
-          className={`hidden h-11 cursor-pointer flex-col justify-center px-2 text-sm leading-tight md:flex ${HOVER}`}
-        >
-          <span className="text-[11px] text-muted-foreground">Returns</span>
-          <span className="text-sm font-semibold">&amp; Orders</span>
         </Link>
 
         {/* Account icon (mobile) */}

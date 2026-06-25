@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUp, MapPin, Phone, Clock } from "lucide-react";
+import { ArrowUp, Truck, ShieldCheck, RefreshCcw } from "lucide-react";
 
 type FooterLink = { href: string; label: string };
 type FooterColumn = { title: string; links: FooterLink[] };
@@ -20,7 +20,7 @@ const COLUMNS: FooterColumn[] = [
     title: "Get to Know Us",
     links: [
       { href: "/about/story", label: "Our Story" },
-      { href: "/about", label: "About Mirage" },
+      { href: "/about", label: "About Shezmin" },
       { href: "/seller", label: "Sell with Us" },
     ],
   },
@@ -56,33 +56,32 @@ export function SiteFooter() {
       {/* Main footer */}
       <div className="bg-header text-background">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Brand + store info */}
+          {/* Brand + online promise */}
           <div>
-            <Link href="/" className="flex flex-col leading-none" aria-label="Mirage Sarees home">
+            <Link href="/" className="flex flex-col leading-none" aria-label="Shezmin home">
               <span className="font-display text-2xl font-semibold text-background">
-                Mirage
+                Shezmin
               </span>
               <span className="text-[10px] font-medium uppercase tracking-[0.32em] text-background/60">
-                Sarees
+                shezmin.com
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-background/70">
-              Atlanta&apos;s leading Indian clothing provider since 2001.
+              A curated online clothing brand, delivering apparel direct from
+              India&apos;s finest boutiques.
             </p>
             <ul className="mt-5 space-y-2.5 text-sm text-background/80">
               <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
-                <span>1554 Church Street, Decatur, GA 30033</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
-                <a href="tel:+14042920002" className="cursor-pointer hover:text-background hover:underline">
-                  (404) 292-0002
-                </a>
+                <Truck className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
+                <span>Worldwide shipping, duties prepaid</span>
               </li>
               <li className="flex items-start gap-2.5">
-                <Clock className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
-                <span>Tue–Sat 11–7 · Sun 12–7 · Mon closed</span>
+                <RefreshCcw className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
+                <span>Try-on previews &amp; a return guarantee</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary" aria-hidden />
+                <span>Vetted boutiques, transparent pricing</span>
               </li>
             </ul>
           </div>
@@ -149,7 +148,7 @@ export function SiteFooter() {
             Shipping & Returns
           </Link>
           <span className="text-center">
-            &copy; {new Date().getFullYear()} Mirage Sarees. All rights reserved.
+            &copy; {new Date().getFullYear()} Shezmin. All rights reserved.
           </span>
         </div>
       </div>

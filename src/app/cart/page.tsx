@@ -33,7 +33,7 @@ export default async function CartPage() {
           <div className="mx-auto max-w-7xl px-4 py-8">
             <div className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
               <h1 className="font-display text-2xl font-semibold text-foreground">
-                Your Mirage Cart is empty
+                Your Shezmin Cart is empty
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your shopping cart is waiting. Give it purpose.
@@ -165,7 +165,7 @@ export default async function CartPage() {
                     <span>
                       Your order qualifies for{" "}
                       <span className="font-bold">FREE Delivery</span> on items
-                      shipped by Mirage.
+                      shipped by Shezmin.
                     </span>
                   </p>
                 ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-// Mirage Concierge — a multi-turn, voice-capable shopping assistant in a
+// Shezmin Assistant — a multi-turn, voice-capable shopping assistant in a
 // right-side sheet. Conversation state lives in sessionStorage; all intent
 // logic runs server-side via /api/concierge/chat (so this stays a thin client).
 
@@ -12,7 +12,7 @@ import { useSpeechRecognition } from "@/components/buyer/use-speech-recognition"
 import { cn } from "@/lib/utils";
 import type { SearchIntent, RemovableChip, ConciergeTurn } from "@/lib/concierge";
 
-const STORAGE_KEY = "mirage.concierge";
+const STORAGE_KEY = "shezmin.assistant";
 
 type CardResult = {
   id: string;
@@ -116,7 +116,7 @@ export function ConciergeDrawer() {
           body: JSON.stringify({ priorIntent: intent, history: turns, ...body }),
         });
         if (!res.ok) {
-          setError("The concierge is unavailable right now.");
+          setError("The assistant is unavailable right now.");
           return;
         }
         const data = (await res.json()) as ChatResponse;
@@ -200,10 +200,10 @@ export function ConciergeDrawer() {
         <button
           type="button"
           className="hidden h-11 cursor-pointer items-center gap-1.5 rounded-sm px-2.5 text-sm font-semibold text-foreground transition-colors hover:text-secondary md:flex"
-          aria-label="Ask the Mirage concierge"
+          aria-label="Ask the Shezmin assistant"
         >
           <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-          <span className="hidden lg:inline">Concierge</span>
+          <span className="hidden lg:inline">Assistant</span>
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -216,7 +216,7 @@ export function ConciergeDrawer() {
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <Dialog.Title className="flex items-center gap-2 font-display text-lg font-semibold text-primary">
               <Sparkles className="h-5 w-5" aria-hidden />
-              Mirage Concierge
+              Shezmin Assistant
             </Dialog.Title>
             <div className="flex items-center gap-1">
               <button
@@ -233,7 +233,7 @@ export function ConciergeDrawer() {
                 <button
                   type="button"
                   className="rounded-sm p-1.5 text-muted-foreground hover:text-foreground"
-                  aria-label="Close concierge"
+                  aria-label="Close assistant"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -366,7 +366,7 @@ export function ConciergeDrawer() {
                     : "border-border bg-background text-foreground hover:border-primary/40",
                 )}
                 aria-pressed={speech.listening}
-                aria-label={speech.listening ? "Stop listening" : "Speak to the concierge"}
+                aria-label={speech.listening ? "Stop listening" : "Speak to the assistant"}
               >
                 <Mic className="h-5 w-5" />
               </button>

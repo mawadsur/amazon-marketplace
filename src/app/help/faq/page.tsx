@@ -6,9 +6,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "FAQ · Mirage",
+  title: "FAQ · Shezmin",
   description:
-    "Answers to common questions about Mirage — shipping and duties, the flat 10% service charge, returns, sizing, try-on previews, tracking orders, selling, and payment methods.",
+    "Answers to common questions about Shezmin — shipping and duties, the flat 10% service charge, returns, sizing, try-on previews, tracking orders, selling, and payment methods.",
 };
 
 export default function FaqPage() {
@@ -20,7 +20,7 @@ export default function FaqPage() {
           Frequently asked questions
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Everything you need to shop Mirage with confidence.
+          Everything you need to shop Shezmin with confidence.
         </p>
 
         <section className="prose prose-sm mt-8 space-y-6 text-sm leading-relaxed text-foreground">
@@ -40,7 +40,7 @@ export default function FaqPage() {
           <div>
             <h3 className="font-semibold">What is the 10% service charge?</h3>
             <p className="mt-2">
-              Sellers set their own item prices, and Mirage adds a transparent,
+              Sellers set their own item prices, and Shezmin adds a transparent,
               flat <strong>10% service charge</strong> at checkout. There&apos;s
               no hidden markup on the garment — this single fee supports curation,
               buyer protection, and dispute handling.
@@ -96,9 +96,9 @@ export default function FaqPage() {
           </div>
 
           <div>
-            <h3 className="font-semibold">How do I sell on Mirage?</h3>
+            <h3 className="font-semibold">How do I sell on Shezmin?</h3>
             <p className="mt-2">
-              Mirage works with quality-vetted boutiques across India. If you run
+              Shezmin works with quality-vetted boutiques across India. If you run
               one, head to the{" "}
               <Link href="/seller" className="amzn-link">
                 seller portal
@@ -111,7 +111,7 @@ export default function FaqPage() {
             <h3 className="font-semibold">What payment methods do you accept?</h3>
             <p className="mt-2">
               We accept major credit and debit cards, processed securely through
-              our payment provider. Mirage never stores your full card number, and
+              our payment provider. Shezmin never stores your full card number, and
               your order total — including the service charge and prepaid duties —
               is shown clearly before you confirm.
             </p>

@@ -85,7 +85,7 @@ export default async function ShopPage(props: {
                 <p className="max-w-2xl">{shop.bio}</p>
               ) : (
                 <p className="max-w-2xl text-muted-foreground">
-                  A verified Mirage shop based in {shop.city}, {shop.region}.
+                  A verified Shezmin boutique based in {shop.city}, {shop.region}.
                 </p>
               )}
               <p className="mt-3 text-xs text-muted-foreground">

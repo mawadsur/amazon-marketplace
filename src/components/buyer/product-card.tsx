@@ -94,7 +94,7 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
       : null;
   const badgeLabel =
     product.shop.badge === "VERIFIED"
-      ? "Mirage Edit"
+      ? "Shezmin Edit"
       : product.shop.badge === "NEW"
         ? "New In"
         : null;

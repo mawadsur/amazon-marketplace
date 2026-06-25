@@ -1,5 +1,5 @@
-// Mirage Sarees editorial home. Full-bleed serif hero, collection cards,
-// New Arrivals rail, heritage/region row, brand-story band, service strip.
+// Shezmin editorial home. Full-bleed serif hero, collection cards,
+// New Arrivals rail, region row, brand-story band, service strip.
 // Server component — uses the live catalog (textiles=sarees, jewelry, handicrafts).
 
 import Link from "next/link";
@@ -18,7 +18,7 @@ import {
 // SearchBar uses useSearchParams, so this interactive home is dynamic.
 export const dynamic = "force-dynamic";
 
-const FALLBACK_THUMB = "https://placehold.co/600x800/F4E9E1/BE185D/png?text=Mirage";
+const FALLBACK_THUMB = "https://placehold.co/600x800/F4E9E1/BE185D/png?text=Shezmin";
 
 // "What are you looking for?" — editorial category entry points. Images are
 // generated and live under /public/redesign; every href resolves to a real page.
@@ -208,7 +208,7 @@ export default async function HomePage() {
               </div>
             ) : (
               <p className="py-6 text-sm text-muted-foreground">
-                No products yet. Run <code>npm run db:seed</code>.
+                No products yet. Check back soon.
               </p>
             )}
           </div>
@@ -307,9 +307,9 @@ export default async function HomePage() {
               Our Story
             </p>
             <blockquote className="mt-5 font-display text-2xl font-medium leading-snug sm:text-3xl">
-              &ldquo;Atlanta&apos;s leading Indian clothing provider since 2001.
-              We specialize in sarees, lehengas, anarkalis, sherwanis and every
-              Indian wedding attire — chosen with care, worn with pride.&rdquo;
+              &ldquo;A curated online clothing brand, delivering apparel direct
+              from India&apos;s finest boutiques. Sarees, lehengas, suits and
+              jewelry — chosen with care, shipped to your door.&rdquo;
             </blockquote>
             <Link
               href="/about/story"
@@ -331,8 +331,8 @@ export default async function HomePage() {
               },
               {
                 icon: Scissors,
-                title: "Sizing & alterations",
-                body: "Visit us in Decatur for expert fitting and alterations, or follow our online sizing guide.",
+                title: "Try-on previews & sizing",
+                body: "Preview the drape before you buy and follow our online sizing guide for the perfect fit.",
               },
               {
                 icon: Sparkles,

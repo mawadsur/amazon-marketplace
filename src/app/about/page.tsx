@@ -1,4 +1,4 @@
-// /about — about Mirage. Public, no DB.
+// /about — about Shezmin. Public, no DB.
 
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
@@ -6,9 +6,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "About · Mirage",
+  title: "About · Shezmin",
   description:
-    "Mirage is a curated marketplace connecting US and diaspora buyers directly with India's finest clothing boutiques — quality-vetted sellers, transparent pricing, and a return guarantee.",
+    "Shezmin is a curated online clothing brand delivering apparel direct from India's finest boutiques — try-on previews, transparent pricing, and a return guarantee.",
 };
 
 export default function AboutPage() {
@@ -17,19 +17,19 @@ export default function AboutPage() {
       <MarketplaceNav />
       <main className="container mx-auto max-w-3xl px-4 py-12">
         <h1 className="font-display text-4xl font-semibold tracking-tight">
-          About Mirage
+          About Shezmin
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          India&apos;s finest boutiques, brought straight to your door.
+          India&apos;s finest boutiques, delivered to your door.
         </p>
 
         <section className="prose prose-sm mt-8 space-y-6 text-sm leading-relaxed text-foreground">
           <div>
             <p>
-              Mirage is a curated marketplace that connects buyers in the United
-              States and the wider diaspora directly with India&apos;s finest
-              clothing boutiques. From handwoven sarees to bridal lehengas and
-              everyday elegance, every piece comes from a maker we know and a
+              Shezmin is a curated online clothing brand. We deliver apparel
+              direct from India&apos;s finest boutiques — wherever you are. From
+              handwoven sarees and bridal lehengas to suits, jewelry, and
+              everyday accessories, every piece comes from a maker we know and a
               boutique we trust.
             </p>
           </div>
@@ -38,9 +38,9 @@ export default function AboutPage() {
             <h2 className="text-lg font-semibold">Quality-vetted sellers</h2>
             <p className="mt-2">
               We don&apos;t list everything — we list the right things. Each
-              boutique on Mirage is reviewed for craftsmanship, authenticity, and
-              service before it ever reaches you. Curation over clutter is the
-              whole point.
+              boutique on Shezmin is reviewed for craftsmanship, authenticity,
+              and service before it ever reaches you. Curation over clutter is
+              the whole point.
             </p>
           </div>
 
@@ -55,12 +55,11 @@ export default function AboutPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold">AI try-on previews</h2>
+            <h2 className="text-lg font-semibold">Try-on previews</h2>
             <p className="mt-2">
-              Buying clothing across borders shouldn&apos;t be a guess. Our
-              AI-powered try-on previews let you picture how a piece looks before
-              it ships, so you can shop with confidence from thousands of miles
-              away.
+              Buying clothing online shouldn&apos;t be a guess. Our AI-powered
+              try-on previews let you picture how a piece looks before it ships,
+              so you can shop with confidence from anywhere.
             </p>
           </div>
 
@@ -76,7 +75,7 @@ export default function AboutPage() {
           </div>
 
           <div className="rounded-lg border border-border bg-card p-6">
-            <p className="font-semibold">Want to know how Mirage began?</p>
+            <p className="font-semibold">Want to know how Shezmin began?</p>
             <p className="mt-2 text-muted-foreground">
               Read{" "}
               <Link href="/about/story" className="amzn-link">

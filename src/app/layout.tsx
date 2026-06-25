@@ -22,22 +22,23 @@ const SITE_DESCRIPTION =
   "Curated sarees, lehengas, bridal couture and Indian jewelry — hand-picked direct from India's finest boutiques, with AI try-on previews, transparent pricing and a return guarantee.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://shezmin.com"),
   title: {
-    default: "Mirage — Curated Indian fashion, direct from India's boutiques",
-    template: "%s · Mirage",
+    default: "Shezmin — Curated clothing, direct from India",
+    template: "%s · Shezmin",
   },
   description: SITE_DESCRIPTION,
-  applicationName: "Mirage",
+  applicationName: "Shezmin",
   openGraph: {
-    title: "Mirage — Curated Indian fashion, direct from India's boutiques",
+    title: "Shezmin — Curated clothing, direct from India",
     description: SITE_DESCRIPTION,
-    siteName: "Mirage",
+    siteName: "Shezmin",
     type: "website",
-    images: [{ url: "/redesign/category-bridal.jpg", width: 1536, height: 2048, alt: "Mirage bridal edit" }],
+    images: [{ url: "/redesign/category-bridal.jpg", width: 1536, height: 2048, alt: "Shezmin bridal edit" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mirage — Curated Indian fashion",
+    title: "Shezmin — Curated clothing, direct from India",
     description: SITE_DESCRIPTION,
     images: ["/redesign/category-bridal.jpg"],
   },

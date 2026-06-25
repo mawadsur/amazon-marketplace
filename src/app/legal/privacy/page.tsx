@@ -6,9 +6,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Privacy Policy · Mirage",
+  title: "Privacy Policy · Shezmin",
   description:
-    "How Mirage collects, uses, and protects your data as a US ↔ India fashion marketplace — accounts, orders, cookies, and your rights.",
+    "How Shezmin collects, uses, and protects your data as an online clothing brand — accounts, orders, cookies, and your rights.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -26,11 +26,10 @@ export default function PrivacyPolicyPage() {
         <section className="prose prose-sm mt-8 space-y-6 text-sm leading-relaxed text-foreground">
           <div>
             <p>
-              Mirage is a curated marketplace connecting buyers in the United
-              States and the wider diaspora with clothing boutiques across India.
-              This policy explains what we collect, why we collect it, and the
-              choices you have. By using Mirage you agree to the practices
-              described here.
+              Shezmin is a curated online clothing brand, delivering apparel
+              direct from India&apos;s finest boutiques to your door. This policy
+              explains what we collect, why we collect it, and the choices you
+              have. By using Shezmin you agree to the practices described here.
             </p>
           </div>
 
@@ -49,7 +48,7 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Payment data</strong> — handled by our payment processor.
-                Mirage never stores your full card number; we retain only a token
+                Shezmin never stores your full card number; we retain only a token
                 and the last four digits for receipts and dispute resolution.
               </li>
               <li>
@@ -72,7 +71,7 @@ export default function PrivacyPolicyPage() {
                 products.
               </li>
               <li>
-                To detect fraud, keep the marketplace safe, and meet legal and
+                To detect fraud, keep your account safe, and meet legal and
                 tax obligations across the US and India.
               </li>
             </ul>
@@ -83,13 +82,13 @@ export default function PrivacyPolicyPage() {
             <p className="mt-2">
               We use cookies for essential site functions (such as keeping you
               signed in and your cart intact) and for analytics. When you first
-              visit Mirage you&apos;ll see a cookie banner; the choice you make
+              visit Shezmin you&apos;ll see a cookie banner; the choice you make
               there is stored in your browser, so the banner won&apos;t reappear
               on that device unless you clear your browser data.
             </p>
             <p className="mt-2">
               You can clear or block cookies in your browser settings at any time,
-              though some features of the marketplace may not work as expected if
+              though some features of the store may not work as expected if
               essential cookies are disabled.
             </p>
           </div>
@@ -97,8 +96,8 @@ export default function PrivacyPolicyPage() {
           <div>
             <h2 className="text-lg font-semibold">Third parties we share with</h2>
             <p className="mt-2">
-              We share only the data needed to run the marketplace, never sell
-              your personal information, and require partners to protect it:
+              We share only the data needed to run the store, never sell your
+              personal information, and require partners to protect it:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
@@ -142,8 +141,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-lg font-semibold">Contact</h2>
             <p className="mt-2">
               Questions about your privacy or this policy? Reach our team at{" "}
-              <Link href="mailto:privacy@mirage.shop" className="amzn-link">
-                privacy@mirage.shop
+              <Link href="mailto:privacy@shezmin.com" className="amzn-link">
+                privacy@shezmin.com
               </Link>
               . You can also review our{" "}
               <Link href="/legal/terms" className="amzn-link">

@@ -210,7 +210,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                 <ul className="space-y-1.5 border-t border-border pt-3 text-xs">
                   {[
                     { Icon: Shield, label: "Secure transaction" },
-                    { Icon: Truck, label: "Ships from Mirage" },
+                    { Icon: Truck, label: "Ships from Shezmin" },
                     { Icon: Store, label: `Sold by ${product.shop.name}` },
                     { Icon: RotateCcw, label: "14-day returns" },
                   ].map(({ Icon, label }) => (

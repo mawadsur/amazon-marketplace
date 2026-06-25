@@ -163,7 +163,7 @@ export default async function CheckoutPage() {
                   Place your order
                 </button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  By placing your order, you agree to Mirage&apos;s terms and
+                  By placing your order, you agree to Shezmin&apos;s terms and
                   conditions.
                 </p>
 

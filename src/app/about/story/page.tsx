@@ -1,4 +1,4 @@
-// /about/story — Mirage brand narrative. Public, no DB.
+// /about/story — Shezmin brand narrative. Public, no DB.
 
 import Link from "next/link";
 import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
@@ -6,9 +6,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Our Story · Mirage",
+  title: "Our Story · Shezmin",
   description:
-    "How Mirage began — bringing India's boutique craftsmanship straight to the diaspora, with curation over clutter and the people behind the looms at the heart of it.",
+    "How Shezmin began — an online clothing brand bringing India's boutique craftsmanship to your door, with curation over clutter and the people behind the looms at the heart of it.",
 };
 
 export default function OurStoryPage() {
@@ -26,11 +26,12 @@ export default function OurStoryPage() {
         <section className="prose prose-sm mt-8 space-y-6 text-sm leading-relaxed text-foreground">
           <div>
             <p>
-              Mirage started with a familiar ache: living far from home and
-              wanting the clothes that actually feel like it. The sari you&apos;d
-              find tucked in a lane in Jaipur. The lehenga a family boutique in
-              Hyderabad would make just for you. The pieces that carry a place in
-              their weave — and that almost never make it across an ocean.
+              Shezmin started with a familiar ache: wanting clothes that
+              actually feel like home, no matter where you open your laptop. The
+              sari you&apos;d find tucked in a lane in Jaipur. The lehenga a
+              family boutique in Hyderabad would make just for you. The pieces
+              that carry a place in their weave — and that almost never make it
+              across an ocean.
             </p>
           </div>
 
@@ -60,10 +61,10 @@ export default function OurStoryPage() {
 
           <div>
             <p>
-              Mirage is still young, and still choosing carefully. Every boutique
-              we add, every piece we list, we ask the same question: would we send
-              this to someone we love? If the answer is yes, it earns its place
-              here.
+              Shezmin is still young, and still choosing carefully. Every
+              boutique we add, every piece we list, we ask the same question:
+              would we send this to someone we love? If the answer is yes, it
+              earns its place here.
             </p>
           </div>
 
@@ -71,7 +72,7 @@ export default function OurStoryPage() {
             <p className="text-muted-foreground">
               Learn more{" "}
               <Link href="/about" className="amzn-link">
-                about Mirage
+                about Shezmin
               </Link>
               , or if you run a boutique that belongs here,{" "}
               <Link href="/seller" className="amzn-link">

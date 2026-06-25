@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-const STORAGE_KEY = "mirage.cookie-consent";
+const STORAGE_KEY = "shezmin.cookie-consent";
 
 export function CookieBanner() {
   // Start hidden; reveal only after we confirm no prior choice (avoids SSR flash).
@@ -43,7 +43,7 @@ export function CookieBanner() {
       <div className="container mx-auto max-w-4xl rounded-lg border border-border bg-card p-4 shadow-lg sm:flex sm:items-center sm:gap-4 sm:p-5">
         <p className="text-sm leading-relaxed text-muted-foreground">
           We use cookies to keep your cart, remember preferences, and understand
-          how Mirage is used. See our{" "}
+          how Shezmin is used. See our{" "}
           <Link href="/legal/privacy" className="amzn-link font-medium">
             Privacy Policy
           </Link>
