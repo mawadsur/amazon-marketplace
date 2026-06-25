@@ -30,12 +30,12 @@ const CATEGORY_TILES: Array<{ label: string; href: string; img: string }> = [
   { label: "Accessories", href: "/shop/category/handicrafts", img: "/redesign/category-accessories.jpg" },
 ];
 
-// Rotating hero slider: the AI try-on video + 3 generated editorial banners.
+// Rotating hero slider — different items, each with a still (poster + fallback)
+// and a video that plays only when the device permits (see HeroCarousel).
 const HERO_SLIDES: HeroSlide[] = [
   {
-    kind: "video",
-    src: "/redesign/hero-tryon.mp4",
-    poster: "/redesign/hero-tryon-poster.jpg",
+    img: "/redesign/hero-tryon-poster.jpg",
+    video: "/redesign/hero-tryon.mp4",
     alt: "A model lifts a rose-pink silk dress from the rack and tries it on",
     eyebrow: "Curated · Direct from India's boutiques",
     title: "Every drape tells a story.",
@@ -44,8 +44,8 @@ const HERO_SLIDES: HeroSlide[] = [
     badge: "AI try-on",
   },
   {
-    kind: "image",
-    src: "/redesign/banner-bridal.jpg",
+    img: "/redesign/banner-bridal.jpg",
+    video: "/redesign/banner-bridal.mp4",
     alt: "Bride in a rose-pink and gold bridal lehenga in a palace setting",
     eyebrow: "The Bridal Edit",
     title: "Made for the big day.",
@@ -53,8 +53,8 @@ const HERO_SLIDES: HeroSlide[] = [
     ctaHref: "/search?q=bridal",
   },
   {
-    kind: "image",
-    src: "/redesign/banner-festive.jpg",
+    img: "/redesign/banner-festive.jpg",
+    video: "/redesign/banner-festive.mp4",
     alt: "Woman twirling in a vibrant rose-pink and gold festive saree",
     eyebrow: "Festive new arrivals",
     title: "Freshly draped, just landed.",
@@ -62,8 +62,8 @@ const HERO_SLIDES: HeroSlide[] = [
     ctaHref: "/shop",
   },
   {
-    kind: "image",
-    src: "/redesign/banner-textile.jpg",
+    img: "/redesign/banner-textile.jpg",
+    video: "/redesign/banner-textile.mp4",
     alt: "Stacked silk sarees in rose, gold and cream on a wooden boutique table",
     eyebrow: "Straight from the loom",
     title: "Woven by India's finest.",

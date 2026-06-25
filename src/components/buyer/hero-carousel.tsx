@@ -4,18 +4,22 @@
 // no server imports (keeps env/prisma out of the browser bundle). Slide data is
 // passed in as serializable props from the server page.
 //
-// UX: auto-rotates (paused on hover/focus, disabled under prefers-reduced-motion),
-// prev/next arrows, dot indicators, ArrowLeft/Right keyboard nav, and the video
-// slide only plays while it's the active slide.
+// Each slide carries an image (always shown as poster + fallback) and an optional
+// video. Video is only loaded/played when the DEVICE PERMITS — i.e. the user
+// hasn't asked for reduced motion, isn't on data-saver, and isn't on a slow
+// connection. Otherwise the still image is shown (progressive enhancement).
+//
+// UX: auto-rotates (paused on hover/focus, disabled under reduced-motion),
+// prev/next arrows, dot indicators, ArrowLeft/Right keyboard nav; only the
+// active slide's video plays.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
 export type HeroSlide = {
-  kind: "video" | "image";
-  src: string;
-  poster?: string;
+  img: string; // poster + fallback, always present
+  video?: string; // optional mp4, played only when the device permits
   alt: string;
   eyebrow: string;
   title: string;
@@ -24,15 +28,45 @@ export type HeroSlide = {
   badge?: string;
 };
 
+type NetworkInfo = {
+  saveData?: boolean;
+  effectiveType?: string;
+  addEventListener?: (type: string, listener: () => void) => void;
+  removeEventListener?: (type: string, listener: () => void) => void;
+};
+
 const ROTATE_MS = 6000;
 
 export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Start false so SSR + first paint show the still image; upgrade to video
+  // after we've confirmed the device can handle it.
+  const [videoOk, setVideoOk] = useState(false);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const count = slides.length;
 
   const go = useCallback((n: number) => setIndex((i) => (n + count) % count), [count]);
+
+  // Decide whether the device permits video (connection- + motion-aware).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const motionMq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const conn = (navigator as Navigator & { connection?: NetworkInfo }).connection;
+    const compute = () => {
+      const reduce = motionMq?.matches ?? false;
+      const saveData = conn?.saveData === true;
+      const slow = /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "");
+      setVideoOk(!reduce && !saveData && !slow);
+    };
+    compute();
+    motionMq?.addEventListener?.("change", compute);
+    conn?.addEventListener?.("change", compute);
+    return () => {
+      motionMq?.removeEventListener?.("change", compute);
+      conn?.removeEventListener?.("change", compute);
+    };
+  }, []);
 
   // Auto-rotate, respecting reduced-motion + pause state.
   useEffect(() => {
@@ -45,13 +79,14 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     return () => clearTimeout(t);
   }, [index, paused, count]);
 
-  // Play the video only while its slide is active (saves resources off-slide).
+  // Play only the active slide's video; pause the rest.
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (slides[index]?.kind === "video") v.play().catch(() => {});
-    else v.pause();
-  }, [index, slides]);
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === index) v.play().catch(() => {});
+      else v.pause();
+    });
+  }, [index, videoOk]);
 
   const active = slides[index];
 
@@ -70,41 +105,45 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       }}
     >
       <div className="relative aspect-[4/5] w-full sm:aspect-[16/9] lg:aspect-[5/2]">
-        {slides.map((s, i) => (
-          <div
-            key={s.src}
-            aria-hidden={i !== index}
-            className={`absolute inset-0 transition-opacity duration-700 ease-out ${
-              i === index ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
-          >
-            {s.kind === "video" ? (
-              <video
-                ref={videoRef}
-                className="h-full w-full object-cover object-[72%_center] sm:object-center"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                poster={s.poster}
-                aria-label={s.alt}
-              >
-                <source src={s.src} type="video/mp4" />
-              </video>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={s.src}
-                alt={s.alt}
-                loading={i === 0 ? "eager" : "lazy"}
-                className="h-full w-full object-cover object-[72%_center] sm:object-center"
-              />
-            )}
-            {/* Scrim: bottom-up on mobile, left-to-right on desktop, for text legibility. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent sm:bg-gradient-to-r sm:from-foreground/75 sm:via-foreground/25 sm:to-transparent" />
-          </div>
-        ))}
+        {slides.map((s, i) => {
+          const showVideo = videoOk && Boolean(s.video);
+          return (
+            <div
+              key={s.img}
+              aria-hidden={i !== index}
+              className={`absolute inset-0 transition-opacity duration-700 ease-out ${
+                i === index ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              {showVideo ? (
+                <video
+                  ref={(el) => {
+                    videoRefs.current[i] = el;
+                  }}
+                  className="h-full w-full object-cover object-[72%_center] sm:object-center"
+                  muted
+                  loop
+                  playsInline
+                  preload={i === 0 ? "metadata" : "none"}
+                  poster={s.img}
+                  aria-label={s.alt}
+                >
+                  <source src={s.video} type="video/mp4" />
+                </video>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={s.img}
+                  alt={s.alt}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  className="h-full w-full object-cover object-[72%_center] sm:object-center"
+                />
+              )}
+              {/* Scrim: bottom-up on mobile, left-to-right on desktop. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent sm:bg-gradient-to-r sm:from-foreground/75 sm:via-foreground/25 sm:to-transparent" />
+            </div>
+          );
+        })}
 
         {/* Active-slide copy (re-keyed so it fades in on change). */}
         <div className="pointer-events-none absolute inset-0 flex items-end sm:items-center">
@@ -153,7 +192,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
           {slides.map((s, i) => (
             <button
-              key={s.src}
+              key={s.img}
               type="button"
               onClick={() => setIndex(i)}
               aria-label={`Go to slide ${i + 1}: ${s.eyebrow}`}
