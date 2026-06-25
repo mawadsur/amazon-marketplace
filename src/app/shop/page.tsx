@@ -21,8 +21,8 @@ export default async function ShopDirectoryPage() {
   return (
     <>
       <MarketplaceNav />
-      <main className="bg-muted/40">
-        <div className="container mx-auto max-w-7xl px-4 py-3">
+      <main className="bg-background">
+        <div className="container mx-auto max-w-7xl px-4 pt-6">
           <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
             <Link href="/" className="hover:text-accent hover:underline">
               Home
@@ -32,10 +32,13 @@ export default async function ShopDirectoryPage() {
           </nav>
         </div>
 
-        <div className="container mx-auto max-w-7xl px-4 pb-10">
-          <h1 className="text-2xl font-bold tracking-tight">All shops &amp; products</h1>
+        <div className="container mx-auto max-w-7xl px-4 pb-14">
+          <p className="mirage-eyebrow mt-6">The marketplace</p>
+          <h1 className="mt-2 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+            All shops &amp; products
+          </h1>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[24%_1fr]">
+          <div className="mt-8 grid gap-6 lg:grid-cols-[24%_1fr]">
             <FilterSidebar
               categories={categories.map((c) => ({
                 slug: c.slug,
@@ -45,7 +48,7 @@ export default async function ShopDirectoryPage() {
               regions={regions}
             />
 
-            <section className="rounded-sm border border-border bg-background p-4">
+            <section className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                 <p className="text-sm">
                   <span className="font-medium">{products.length}</span>{" "}
@@ -54,7 +57,7 @@ export default async function ShopDirectoryPage() {
                 <SortControl />
               </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
                 {products.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}

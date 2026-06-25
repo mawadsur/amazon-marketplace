@@ -33,102 +33,74 @@ export function FilterSidebar({
   activeTier?: string;
 }) {
   return (
-    <aside className="rounded-sm border border-border bg-background p-4 text-sm">
+    <aside className="rounded-lg border border-border bg-card p-5 text-sm">
       <FacetGroup label="Category">
-        <ul className="space-y-1.5">
+        <ul className="space-y-1">
           <li>
-            <Link
-              href="/shop"
-              className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                !activeCategory ? "font-bold text-foreground" : "text-foreground"
-              }`}
-            >
+            <FacetLink href="/shop" active={!activeCategory}>
               Any category
-            </Link>
+            </FacetLink>
           </li>
           {categories.map((c) => (
             <li key={c.slug}>
-              <Link
+              <FacetLink
                 href={`/shop/category/${c.slug}`}
-                className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                  activeCategory === c.slug ? "font-bold text-foreground" : "text-foreground"
-                }`}
+                active={activeCategory === c.slug}
+                count={c.count}
               >
-                {c.name}{" "}
-                <span className="text-xs text-muted-foreground">({c.count})</span>
-              </Link>
+                {c.name}
+              </FacetLink>
             </li>
           ))}
         </ul>
       </FacetGroup>
 
       <FacetGroup label="Region">
-        <ul className="space-y-1.5">
+        <ul className="space-y-1">
           <li>
-            <Link
-              href="/shop"
-              className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                !activeRegion ? "font-bold text-foreground" : "text-foreground"
-              }`}
-            >
+            <FacetLink href="/shop" active={!activeRegion}>
               Any region
-            </Link>
+            </FacetLink>
           </li>
           {regions.map((r) => (
             <li key={r.region}>
-              <Link
+              <FacetLink
                 href={`/shop/region/${regionNameToSlug(r.region)}`}
-                className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                  activeRegion === r.region
-                    ? "font-bold text-foreground"
-                    : "text-foreground"
-                }`}
+                active={activeRegion === r.region}
+                count={r.shopCount}
               >
-                {r.region}{" "}
-                <span className="text-xs text-muted-foreground">({r.shopCount})</span>
-              </Link>
+                {r.region}
+              </FacetLink>
             </li>
           ))}
         </ul>
       </FacetGroup>
 
       <FacetGroup label="Price">
-        <ul className="space-y-1.5">
+        <ul className="space-y-1">
           {PRICE_BANDS.map((p) => (
             <li key={p.label}>
-              <Link
-                href={p.href}
-                className="block py-0.5 text-foreground transition-colors hover:text-accent hover:underline"
-              >
-                {p.label}
-              </Link>
+              <FacetLink href={p.href}>{p.label}</FacetLink>
             </li>
           ))}
         </ul>
       </FacetGroup>
 
       <FacetGroup label="Seller quality">
-        <ul className="space-y-1.5">
+        <ul className="space-y-1">
           <li>
-            <Link
-              href="/search?sort=trust"
-              className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                !activeTier ? "font-bold text-foreground" : "text-foreground"
-              }`}
-            >
+            <FacetLink href="/search?sort=trust" active={!activeTier}>
               All sellers
-            </Link>
+            </FacetLink>
           </li>
           {TIER_FILTERS.map((t) => (
             <li key={t.tier}>
-              <Link
+              <FacetLink
                 href={`/search?tier=${t.tier}&sort=trust`}
-                className={`block py-0.5 transition-colors hover:text-accent hover:underline ${
-                  activeTier === t.tier ? "font-bold text-foreground" : "text-foreground"
-                }`}
+                active={activeTier === t.tier}
               >
                 {t.label}
-              </Link>
+              </FacetLink>
             </li>
           ))}
         </ul>
@@ -137,10 +109,46 @@ export function FilterSidebar({
   );
 }
 
+// Editorial filter chip: rounded-md, hairline; active fills with primary rose.
+function FacetLink({
+  href,
+  active = false,
+  count,
+  children,
+}: {
+  href: string;
+  active?: boolean;
+  count?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "true" : undefined}
+      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+        active
+          ? "border-primary bg-primary font-medium text-primary-foreground"
+          : "border-transparent text-foreground hover:border-border hover:bg-muted/60"
+      }`}
+    >
+      <span>{children}</span>
+      {typeof count === "number" ? (
+        <span
+          className={`text-xs ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}
+        >
+          {count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
 function FacetGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="border-b border-border py-3 first:pt-0 last:border-b-0 last:pb-0">
-      <h2 className="mb-2 text-sm font-bold text-foreground">{label}</h2>
+    <section className="border-b border-border py-4 first:pt-0 last:border-b-0 last:pb-0">
+      <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </h2>
       {children}
     </section>
   );
@@ -153,7 +161,7 @@ export function SortControl() {
       <span className="relative">
         <select
           aria-label="Sort results"
-          className="cursor-pointer rounded-sm border border-border bg-background py-1 pl-2 pr-7 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="cursor-pointer rounded-md border border-border bg-card py-1.5 pl-2.5 pr-7 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
           defaultValue="featured"
         >
           <option value="featured">Featured</option>

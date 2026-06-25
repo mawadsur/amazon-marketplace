@@ -28,9 +28,9 @@ export default async function ShopPage(props: {
   return (
     <>
       <MarketplaceNav />
-      <main className="bg-muted/40">
+      <main className="bg-background">
         {/* Breadcrumb */}
-        <div className="container mx-auto max-w-7xl px-4 py-3">
+        <div className="container mx-auto max-w-7xl px-4 pt-6">
           <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
             <Link href="/" className="hover:text-accent hover:underline">
               Home
@@ -45,22 +45,22 @@ export default async function ShopPage(props: {
         </div>
 
         {/* Hero banner */}
-        <section className="container mx-auto max-w-7xl px-4 pb-4">
-          <div className="grid gap-6 rounded-sm border border-border bg-muted p-6 md:grid-cols-[auto_1fr] md:items-center md:p-8">
+        <section className="container mx-auto max-w-7xl px-4 pt-6 pb-6">
+          <div className="grid gap-6 rounded-lg bg-muted p-6 ring-1 ring-border md:grid-cols-[auto_1fr] md:items-center md:p-10">
             <div className="flex flex-col items-start gap-4">
               {shop.logoUrl ? (
-                <div className="h-20 w-20 overflow-hidden rounded-sm border border-border bg-background">
+                <div className="h-20 w-20 overflow-hidden rounded-md border border-border bg-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={shop.logoUrl}
-                    alt={shop.name}
+                    alt={`${shop.name} logo`}
                     loading="lazy"
                     className="h-full w-full object-cover"
                   />
                 </div>
               ) : null}
               <div>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
                   {shop.name}
                 </h1>
                 <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
@@ -103,10 +103,10 @@ export default async function ShopPage(props: {
         </section>
 
         {/* Products */}
-        <section className="container mx-auto max-w-7xl px-4 pb-6">
-          <div className="rounded-sm border border-border bg-background p-4">
+        <section className="container mx-auto max-w-7xl px-4 pb-8">
+          <div className="rounded-lg border border-border bg-card p-5">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-              <h2 className="text-lg font-bold tracking-tight">
+              <h2 className="font-display text-xl font-bold tracking-tight">
                 Products from {shop.name}
               </h2>
               <p className="text-xs text-muted-foreground">
@@ -117,7 +117,7 @@ export default async function ShopPage(props: {
               </p>
             </div>
             {productCount > 0 ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
                 {shop.products.map((p) => (
                   <ProductCard
                     key={p.id}
@@ -148,9 +148,9 @@ export default async function ShopPage(props: {
 
         {/* About the shop (collapsible) */}
         {script || shop.story ? (
-          <section className="container mx-auto max-w-7xl px-4 pb-10">
-            <details className="group rounded-sm border border-border bg-card" open>
-              <summary className="flex cursor-pointer items-center justify-between p-4 text-base font-bold tracking-tight">
+          <section className="container mx-auto max-w-7xl px-4 pb-14">
+            <details className="group rounded-lg border border-border bg-card" open>
+              <summary className="flex cursor-pointer items-center justify-between p-5 font-display text-lg font-bold tracking-tight">
                 <span>About {shop.name}</span>
                 <span className="text-xs font-normal text-muted-foreground group-open:hidden">
                   Show
@@ -159,7 +159,7 @@ export default async function ShopPage(props: {
                   Hide
                 </span>
               </summary>
-              <div className="border-t border-border p-4">
+              <div className="border-t border-border p-5">
                 {script && script.slides.length > 0 ? (
                   <>
                     {script.aiAssisted ? (
@@ -173,9 +173,9 @@ export default async function ShopPage(props: {
                           return (
                             <div
                               key={i}
-                              className="rounded-sm bg-muted p-4 text-center sm:col-span-2"
+                              className="rounded-md bg-muted p-5 text-center sm:col-span-2"
                             >
-                              <p className="text-lg font-semibold tracking-tight">
+                              <p className="font-display text-lg font-semibold tracking-tight">
                                 {slide.text}
                               </p>
                             </div>
@@ -185,14 +185,14 @@ export default async function ShopPage(props: {
                           return (
                             <figure
                               key={i}
-                              className="overflow-hidden rounded-sm border border-border bg-muted"
+                              className="overflow-hidden rounded-md border border-border bg-muted"
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={slide.imageUrl}
-                                alt={slide.caption ?? ""}
+                                alt={slide.caption ?? `${shop.name} story image`}
                                 loading="lazy"
-                                className="h-40 w-full object-cover"
+                                className="h-44 w-full object-cover"
                               />
                               {slide.caption ? (
                                 <figcaption className="px-3 py-2 text-xs text-muted-foreground">

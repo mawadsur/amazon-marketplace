@@ -31,9 +31,9 @@ export default async function CartPage() {
         <MarketplaceNav />
         <main className="bg-background pb-12">
           <div className="mx-auto max-w-7xl px-4 py-8">
-            <div className="rounded-sm border border-border bg-card p-8 text-center">
-              <h1 className="text-2xl font-medium text-foreground">
-                Your Bazaar Cart is empty
+            <div className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
+              <h1 className="font-display text-2xl font-semibold text-foreground">
+                Your Mirage Cart is empty
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your shopping cart is waiting. Give it purpose.
@@ -74,9 +74,9 @@ export default async function CartPage() {
 
           <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[74%_26%]">
             {/* Left: items */}
-            <section className="rounded-sm border border-border bg-card p-4">
+            <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
               <div className="flex items-baseline justify-between">
-                <h1 className="text-2xl font-medium text-foreground">
+                <h1 className="font-display text-2xl font-semibold text-foreground">
                   Shopping Cart
                 </h1>
                 <p className="hidden text-sm text-muted-foreground sm:block">
@@ -87,9 +87,7 @@ export default async function CartPage() {
 
               <ul className="divide-y divide-border">
                 {cart.items.map((item) => {
-                  const cover =
-                    item.product.images[0]?.url ??
-                    "https://placehold.co/200x200/png?text=No+Image";
+                  const cover = item.product.images[0]?.url;
                   const line = item.qty * item.product.priceUsdCents;
                   return (
                     <li
@@ -98,15 +96,17 @@ export default async function CartPage() {
                     >
                       <Link
                         href={`/products/${item.product.slug}`}
-                        className="block h-[130px] w-[130px] flex-shrink-0 cursor-pointer overflow-hidden rounded-sm bg-background"
+                        className="block h-[130px] w-[130px] flex-shrink-0 cursor-pointer overflow-hidden rounded-md border border-border bg-background"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={cover}
-                          alt={item.product.title}
-                          loading="lazy"
-                          className="h-full w-full object-contain"
-                        />
+                        {cover ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={cover}
+                            alt={item.product.title}
+                            loading="lazy"
+                            className="h-full w-full object-contain"
+                          />
+                        ) : null}
                       </Link>
                       <div className="min-w-0 flex-1 space-y-1">
                         <Link
@@ -155,7 +155,7 @@ export default async function CartPage() {
 
             {/* Right: summary */}
             <aside className="lg:sticky lg:top-[110px] lg:self-start">
-              <div className="rounded-sm border border-border bg-card p-3">
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
                 {qualifiesForFreeShipping ? (
                   <p className="flex items-start gap-2 text-sm text-foreground">
                     <Check
@@ -165,7 +165,7 @@ export default async function CartPage() {
                     <span>
                       Your order qualifies for{" "}
                       <span className="font-bold">FREE Delivery</span> on items
-                      shipped by Bazaar.
+                      shipped by Mirage.
                     </span>
                   </p>
                 ) : (

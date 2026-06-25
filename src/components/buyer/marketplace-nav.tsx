@@ -114,7 +114,7 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
       >
         <button
           type="button"
-          className={`flex h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-sm px-2.5 font-semibold uppercase tracking-wide ${HOVER}`}
+          className={`flex h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 font-semibold uppercase tracking-wide ${HOVER}`}
           aria-label="Open all categories menu"
         >
           <Menu className="h-4 w-4" aria-hidden="true" />
@@ -124,7 +124,7 @@ export function MarketplaceNav({ initialQuery = "" }: { initialQuery?: string })
           <Link
             key={l.href}
             href={l.href}
-            className={`flex h-9 cursor-pointer items-center whitespace-nowrap rounded-sm px-2.5 ${HOVER}`}
+            className={`flex h-9 cursor-pointer items-center whitespace-nowrap rounded-md px-2.5 ${HOVER}`}
           >
             {l.label}
           </Link>

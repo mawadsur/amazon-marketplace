@@ -3,37 +3,38 @@
 @tailwind utilities;
 
 /*
- * Bazaar design tokens — Amazon-inspired.
- * Light mode only. Navy + orange + yellow palette.
- * No glass, no gradients-as-decor. Dense, utilitarian, fast.
+ * Mirage — Boutique Warm design tokens — editorial fashion-store.
+ * Light mode only. Warm cream + fashion rose + gold + ink palette.
+ * Playfair Display for display headings, Inter for body/UI.
+ * Generous whitespace, soft cards, hairline rules, large imagery, restrained motion.
  */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;             /* #FFFFFF */
-    --foreground: 0 0% 7%;               /* #0F1111 */
+    --background: 28 60% 97%;            /* #FDF7F2 warm cream */
+    --foreground: 24 22% 12%;            /* #241B16 ink */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
-    --primary: 45 100% 54%;              /* #FFD814 yellow CTA */
-    --primary-foreground: 0 0% 7%;
-    --secondary: 27 100% 55%;            /* #FFA41C orange CTA */
-    --secondary-foreground: 0 0% 7%;
-    --accent: 187 100% 23%;              /* #007185 link teal */
-    --accent-foreground: 0 0% 100%;
-    --muted: 0 0% 97%;                   /* #F7F8F8 */
-    --muted-foreground: 0 0% 35%;        /* #565959 */
-    --destructive: 6 96% 36%;            /* #B12704 sale red */
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 87%;                  /* #DDDDDD */
-    --input: 0 0% 87%;
-    --ring: 27 100% 55%;                 /* focus orange */
-    --radius: 0.25rem;
+    --card-foreground: 24 22% 12%;
+    --primary: 333 78% 42%;              /* #BE185D fashion rose — primary CTA */
+    --primary-foreground: 28 60% 97%;    /* cream on rose */
+    --secondary: 32 95% 44%;             /* #D97706 gold accent — secondary CTA */
+    --secondary-foreground: 24 22% 12%;  /* ink on gold */
+    --accent: 333 78% 42%;               /* rose links */
+    --accent-foreground: 28 60% 97%;
+    --muted: 26 40% 94%;                 /* #F4E9E1 warm stone */
+    --muted-foreground: 24 12% 40%;      /* warm gray */
+    --destructive: 0 58% 40%;            /* #A12B2B sale red */
+    --destructive-foreground: 28 60% 97%;
+    --border: 28 30% 88%;                /* #EADDD2 warm hairline */
+    --input: 28 30% 88%;
+    --ring: 333 78% 42%;                 /* focus rose */
+    --radius: 0.5rem;
 
-    /* Amazon-style dark header strips */
-    --header-bg: 209 24% 11%;            /* #131A22 */
-    --header-fg: 0 0% 100%;
-    --subheader-bg: 209 27% 19%;         /* #232F3E */
-    --star: 40 100% 55%;                 /* #FFA41C */
+    /* Warm espresso header strip, deep rose subheader + gold stars */
+    --header-bg: 26 30% 14%;             /* warm espresso */
+    --header-fg: 28 60% 97%;
+    --subheader-bg: 333 55% 30%;         /* deep rose strip */
+    --star: 32 95% 44%;                  /* gold */
   }
 }
 
@@ -43,23 +44,35 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "liga" 1;
+  }
+  /* Display headings lean on the serif; body stays Inter. */
+  h1, h2, h3, .font-display {
+    font-feature-settings: "liga" 1, "kern" 1;
   }
 }
 
 @layer components {
-  /* Amazon-style CTA buttons */
+  /* Editorial CTA buttons (rectangular, refined; replace Amazon pills). */
   .amzn-button-yellow {
-    @apply inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[#F7CA00] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1;
+    @apply inline-flex h-11 cursor-pointer items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors duration-200 hover:bg-[#9D174D] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
   .amzn-button-orange {
-    @apply inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[#FF8F00] bg-secondary px-4 text-sm font-medium text-secondary-foreground transition-colors duration-200 hover:bg-[#FA8900] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1;
+    @apply inline-flex h-11 cursor-pointer items-center justify-center rounded-md bg-secondary px-5 text-sm font-semibold uppercase tracking-wide text-secondary-foreground transition-colors duration-200 hover:bg-[#B45309] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+  /* Editorial outline button (ink hairline). */
+  .mirage-button-outline {
+    @apply inline-flex h-11 cursor-pointer items-center justify-center rounded-sm border border-foreground/80 bg-transparent px-5 text-sm font-semibold uppercase tracking-wide text-foreground transition-colors duration-200 hover:bg-foreground hover:text-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
   }
   .amzn-link {
-    @apply cursor-pointer text-accent transition-colors duration-200 hover:text-destructive hover:underline;
+    @apply cursor-pointer text-accent underline-offset-4 transition-colors duration-200 hover:text-destructive hover:underline;
   }
   .amzn-star {
     color: hsl(var(--star));
+  }
+  /* Thin uppercase eyebrow used above editorial section titles. */
+  .mirage-eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground;
   }
 }
 
@@ -67,6 +80,11 @@
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+/* Hero-carousel slide-copy entrance (reduced-motion neutralizes it below). */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes gradient-x {
   0%, 100% { background-position: 0% 50%; }

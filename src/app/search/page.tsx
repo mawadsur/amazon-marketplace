@@ -44,9 +44,9 @@ export default async function SearchPage(props: {
   return (
     <>
       <MarketplaceNav initialQuery={q} />
-      <main className="bg-muted/40">
+      <main className="bg-background">
         {/* Breadcrumb */}
-        <div className="container mx-auto max-w-7xl px-4 py-3">
+        <div className="container mx-auto max-w-7xl px-4 pt-6">
           <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
             <Link href="/" className="hover:text-accent hover:underline">
               Home
@@ -60,8 +60,8 @@ export default async function SearchPage(props: {
 
         {/* AI Concierge banner */}
         {q ? (
-          <div className="container mx-auto max-w-7xl px-4 pb-3">
-            <div className="flex flex-wrap items-center gap-2 rounded-sm border border-accent/30 bg-accent/5 p-3 text-sm">
+          <div className="container mx-auto max-w-7xl px-4 pt-4 pb-3">
+            <div className="flex flex-wrap items-center gap-2 rounded-md bg-accent/5 p-4 text-sm ring-1 ring-accent/30">
               <span className="flex items-center gap-1.5 font-medium text-accent">
                 <Sparkles className="h-4 w-4" aria-hidden />
                 {intent?.aiAssisted ? "AI search" : "Search"}
@@ -76,7 +76,7 @@ export default async function SearchPage(props: {
                     <span
                       key={`${c.label}-${i}`}
                       className={cn(
-                        "rounded-full border px-2 py-0.5 text-xs font-medium",
+                        "rounded-full border px-2.5 py-0.5 text-xs font-medium",
                         c.tone,
                       )}
                     >
@@ -91,12 +91,12 @@ export default async function SearchPage(props: {
 
         {/* Empty state */}
         {q && results.length === 0 ? (
-          <div className="container mx-auto max-w-7xl px-4 pb-10">
-            <div className="rounded-sm border border-border bg-card p-12 text-center">
-              <p className="text-base text-foreground">
+          <div className="container mx-auto max-w-7xl px-4 pt-4 pb-14">
+            <div className="rounded-lg border border-border bg-card p-14 text-center">
+              <p className="font-display text-2xl font-bold tracking-tight text-foreground">
                 No matches for &ldquo;{q}&rdquo;.
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-3 text-sm text-muted-foreground">
                 Try different terms or{" "}
                 <Link href="/shop" className="text-accent hover:underline">
                   browse by category
@@ -106,8 +106,8 @@ export default async function SearchPage(props: {
             </div>
           </div>
         ) : (
-          <div className="container mx-auto max-w-7xl px-4 pb-10">
-            <div className="grid gap-4 lg:grid-cols-[24%_1fr]">
+          <div className="container mx-auto max-w-7xl px-4 pt-4 pb-14">
+            <div className="grid gap-6 lg:grid-cols-[24%_1fr]">
               <FilterSidebar
                 categories={categories.map((c) => ({
                   slug: c.slug,
@@ -120,7 +120,7 @@ export default async function SearchPage(props: {
                 activeTier={activeTier ? activeTier.toLowerCase() : undefined}
               />
 
-              <section className="rounded-sm border border-border bg-background p-4">
+              <section className="rounded-lg border border-border bg-card p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                   <p className="text-sm">
                     {q ? (
@@ -146,7 +146,7 @@ export default async function SearchPage(props: {
                   <SortControl />
                 </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
                   {results.map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}

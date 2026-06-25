@@ -6,13 +6,13 @@ import { Mic, MicOff, Search, X } from "lucide-react";
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "all", label: "All" },
-  { value: "handicrafts", label: "Handicrafts" },
-  { value: "textiles", label: "Textiles" },
+  { value: "textiles", label: "Sarees" },
   { value: "jewelry", label: "Jewelry" },
-  { value: "sellers", label: "Sellers" },
+  { value: "handicrafts", label: "Accessories" },
+  { value: "sellers", label: "Boutiques" },
 ];
 
-const RECENT_KEY = "bazaar.recentSearches";
+const RECENT_KEY = "mirage.recentSearches";
 const MAX_RECENT = 6;
 
 type Suggestion =
@@ -315,7 +315,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
         id="search-cat"
         value={cat}
         onChange={(e) => setCat(e.target.value)}
-        className="h-full cursor-pointer rounded-l-md border-r border-border bg-muted px-2 text-xs font-medium text-foreground transition-colors duration-200 hover:bg-[#E7E9EC] focus:outline-none"
+        className="h-full cursor-pointer rounded-l-md border-r border-border bg-muted px-2 text-xs font-medium text-foreground transition-colors duration-200 hover:bg-border focus:outline-none"
       >
         {CATEGORIES.map((c) => (
           <option key={c.value} value={c.value}>
@@ -325,7 +325,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
       </select>
 
       <label htmlFor="search-q" className="sr-only">
-        Search Bazaar
+        Search Mirage Sarees
       </label>
       <input
         ref={inputRef}
@@ -335,7 +335,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder={listening ? "Listening..." : "Search Bazaar"}
+        placeholder={listening ? "Listening..." : "Search sarees, lehengas, jewelry…"}
         autoComplete="off"
         role="combobox"
         aria-expanded={showDropdown}
@@ -386,7 +386,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
       <button
         type="submit"
         aria-label="Search"
-        className="flex h-full min-w-[44px] cursor-pointer items-center justify-center rounded-r-md bg-primary px-4 text-primary-foreground transition-colors duration-200 hover:bg-[#F7CA00] focus:outline-none focus:ring-2 focus:ring-ring"
+        className="flex h-full min-w-[44px] cursor-pointer items-center justify-center rounded-r-md bg-primary px-4 text-primary-foreground transition-colors duration-200 hover:bg-[#9D174D] focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <Search className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -469,7 +469,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
                 >
                   {s.kind === "product" ? (
                     <>
-                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-sm border border-border bg-muted">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
                         {s.image ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -492,7 +492,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
                     </>
                   ) : s.kind === "shop" ? (
                     <>
-                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-sm border border-border bg-muted">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md border border-border bg-muted">
                         {s.logoUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -513,7 +513,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
                     </>
                   ) : s.kind === "category" ? (
                     <>
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm bg-muted text-xs font-medium text-muted-foreground">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-muted-foreground">
                         #
                       </div>
                       <div className="min-w-0 flex-1">
@@ -532,7 +532,7 @@ export function SearchBar({ initialQuery = "" }: { initialQuery?: string }) {
                       <span className="flex-1 truncate text-foreground">
                         {s.kind === "raw" ? (
                           <>
-                            Search Bazaar for{" "}
+                            Search Mirage for{" "}
                             <span className="font-medium">&ldquo;{s.text}&rdquo;</span>
                           </>
                         ) : (

@@ -42,7 +42,7 @@ export function PayNowButton({ orderId }: { orderId: string }) {
         type="button"
         onClick={pay}
         disabled={submitting}
-        className="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-primary bg-primary px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-[#9D174D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Processing…" : "Pay now"}
       </button>

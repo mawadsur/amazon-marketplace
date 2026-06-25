@@ -55,6 +55,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui"],
+        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
       },
       animation: {
         shimmer: "shimmer 2.5s linear infinite",

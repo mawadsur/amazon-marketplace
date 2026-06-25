@@ -112,7 +112,7 @@ export function ReviewForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex cursor-pointer items-center justify-center rounded-full border border-[#FCD200] bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex cursor-pointer items-center justify-center rounded-md border border-primary bg-primary px-4 py-2 text-sm font-semibold uppercase tracking-wide text-primary-foreground shadow-sm transition-colors duration-150 hover:bg-[#9D174D] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Submitting…" : "Submit"}
         </button>

@@ -6,9 +6,9 @@ import { MarketplaceNav } from "@/components/buyer/marketplace-nav";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Returns & refunds · Bazaar",
+  title: "Returns & refunds · Mirage",
   description:
-    "Bazaar's return policy: 14-day return window, refund timelines, and how disputes work.",
+    "Mirage's return policy: 14-day return window, refund timelines, and how disputes work.",
 };
 
 export default function ReturnsPolicyPage() {
@@ -47,7 +47,7 @@ export default function ReturnsPolicyPage() {
             <p className="mt-2">
               For returns due to <strong>seller fault</strong> — damaged on
               arrival, not as described, counterfeit, or never delivered —
-              Bazaar covers return shipping and a full refund is issued.
+              Mirage covers return shipping and a full refund is issued.
             </p>
           </div>
 
@@ -73,7 +73,7 @@ export default function ReturnsPolicyPage() {
             <h2 className="text-lg font-semibold">Opening a dispute</h2>
             <p className="mt-2">
               If a seller is unresponsive or you disagree with the resolution
-              offered, you can escalate to Bazaar by opening a dispute from the
+              offered, you can escalate to Mirage by opening a dispute from the
               order page. You&apos;ll be asked to describe what went wrong and
               optionally attach evidence (photos, screenshots, etc.).
             </p>

@@ -29,7 +29,7 @@ export default async function CheckoutPage() {
         <MarketplaceNav />
         <main className="bg-background pb-12">
           <div className="mx-auto max-w-3xl px-4 py-10 text-center">
-            <h1 className="text-2xl font-medium text-foreground">
+            <h1 className="font-display text-2xl font-semibold text-foreground">
               Your cart is empty
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -85,7 +85,7 @@ export default async function CheckoutPage() {
       <MarketplaceNav />
       <main className="bg-background pb-12">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <h1 className="text-2xl font-medium text-foreground">
+          <h1 className="font-display text-2xl font-semibold text-foreground">
             Place your order
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -98,8 +98,8 @@ export default async function CheckoutPage() {
           <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[70%_30%]">
             {/* Left column: address + items */}
             <div className="space-y-4">
-              <section className="rounded-sm border border-border bg-card p-4">
-                <h2 className="text-lg font-medium text-foreground">
+              <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <h2 className="font-display text-lg font-semibold text-foreground">
                   Shipping address
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -110,8 +110,8 @@ export default async function CheckoutPage() {
                 </div>
               </section>
 
-              <section className="rounded-sm border border-border bg-card p-4">
-                <h2 className="text-lg font-medium text-foreground">
+              <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <h2 className="font-display text-lg font-semibold text-foreground">
                   Items being shipped
                 </h2>
                 <ul className="mt-3 divide-y divide-border">
@@ -123,7 +123,7 @@ export default async function CheckoutPage() {
                         key={it.id}
                         className="flex items-start gap-3 py-3 text-sm"
                       >
-                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-sm border border-border bg-background">
+                        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-border bg-background">
                           {cover ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -154,7 +154,7 @@ export default async function CheckoutPage() {
 
             {/* Right column: order summary */}
             <aside className="lg:sticky lg:top-[110px] lg:self-start">
-              <div className="rounded-sm border border-border bg-card p-4">
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
                 <button
                   type="submit"
                   form="checkout-form"
@@ -167,7 +167,7 @@ export default async function CheckoutPage() {
                   conditions.
                 </p>
 
-                <h2 className="mt-4 border-b border-border pb-2 text-base font-medium text-foreground">
+                <h2 className="mt-4 border-b border-border pb-2 font-display text-base font-semibold text-foreground">
                   Order Summary
                 </h2>
 

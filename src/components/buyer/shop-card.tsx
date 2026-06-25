@@ -21,7 +21,7 @@ export type ShopCardShop = {
   _count?: { products: number };
 };
 
-const FALLBACK_BANNER = "https://placehold.co/600x240/png?text=Shop";
+const FALLBACK_BANNER = "https://placehold.co/600x240/F4E9E1/BE185D/png?text=Shop";
 
 export function ShopCard({ shop }: { shop: ShopCardShop }) {
   const banner = shop.bannerUrl ?? FALLBACK_BANNER;
@@ -41,15 +41,15 @@ export function ShopCard({ shop }: { shop: ShopCardShop }) {
   return (
     <Link
       href={`/shop/${shop.slug}`}
-      className="group block cursor-pointer rounded-sm border border-border bg-card transition-all duration-150 hover:border-accent/40 hover:shadow-md"
+      className="group block cursor-pointer overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <div className="aspect-[5/2] w-full overflow-hidden rounded-t-sm bg-muted">
+      <div className="aspect-[5/2] w-full overflow-hidden rounded-t-lg bg-muted">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={banner}
-          alt={shop.name}
+          alt={`${shop.name} storefront banner`}
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
       </div>
       <div className="space-y-1.5 p-3">

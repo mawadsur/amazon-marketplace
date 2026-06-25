@@ -26,8 +26,8 @@ export function AddToCartButton({
 
   const baseColors =
     variant === "yellow"
-      ? "bg-primary text-primary-foreground hover:bg-[#611A33] border border-primary"
-      : "bg-secondary text-secondary-foreground hover:bg-[#A87E2F] border border-secondary";
+      ? "bg-primary text-primary-foreground hover:bg-[#9D174D] border border-primary"
+      : "bg-secondary text-secondary-foreground hover:bg-[#B45309] border border-secondary";
 
   function onClick() {
     if (!isAuthed) {

@@ -121,7 +121,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
             {/* Col 2: Details */}
             <section aria-label="Product details" className="min-w-0 space-y-3">
-              <h1 className="text-2xl font-medium leading-tight text-foreground">
+              <h1 className="font-display text-3xl font-semibold leading-tight text-foreground">
                 {product.title}
               </h1>
               <div className="flex flex-wrap items-center gap-2">
@@ -170,7 +170,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
             {/* Col 3: Buy box */}
             <aside aria-label="Buy box" className="lg:sticky lg:top-[110px] lg:self-start">
-              <div className="space-y-3 rounded-sm border border-border bg-card p-4">
+              <div className="space-y-3 rounded-lg border border-border bg-card p-4 shadow-sm">
                 <p className="text-2xl font-medium tabular-nums text-foreground">
                   <span className="align-top text-sm">$</span>
                   {dollars}
@@ -241,7 +241,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
           {/* Customer reviews */}
           <section id="reviews" className="mt-12 space-y-4 border-t border-border pt-8">
-            <h2 className="text-xl font-medium text-foreground">Customer reviews</h2>
+            <h2 className="font-display text-2xl font-semibold text-foreground">Customer reviews</h2>
             <div className="flex items-center gap-3">
               <StarRow value={filledStars} size="h-5 w-5" />
               <p className="text-sm text-foreground"><span className="font-medium">{formatRating(product.ratingAvg)}</span> out of 5</p>
@@ -250,7 +250,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
             <ReviewForm productId={product.id} isAuthed={isAuthed} isBuyer={isBuyer} />
             <ul className="space-y-4">
               {product.reviews.map((r) => (
-                <li key={r.id} className="rounded-sm border border-border bg-card p-4">
+                <li key={r.id} className="rounded-lg border border-border bg-card p-4 shadow-sm">
                   <p className="text-sm font-medium text-foreground">{r.buyer.name ?? "Anonymous buyer"}</p>
                   <div className="mt-1">
                     <StarRow value={r.rating} size="h-4 w-4" ariaLabel={`${r.rating} out of 5 stars`} />

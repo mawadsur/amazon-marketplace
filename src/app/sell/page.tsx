@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Sell on Bazaar — Reach US buyers, paid in INR",
+  title: "Sell on Mirage — Reach US buyers, paid in INR",
 };
 
 export default function SellLandingPage() {
@@ -11,7 +11,7 @@ export default function SellLandingPage() {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
           <Link href="/" className="text-base font-semibold tracking-tight">
-            Bazaar
+            Mirage
           </Link>
           <Link
             href="/sign-in?as=seller"
@@ -31,7 +31,7 @@ export default function SellLandingPage() {
             Sell to US buyers. Get paid in INR.
           </h1>
           <p className="text-base text-muted-foreground md:text-lg">
-            Bazaar handles English listings, US payments, international shipping, and customs.
+            Mirage handles English listings, US payments, international shipping, and customs.
             You ship from home, we handle the rest.
           </p>
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">

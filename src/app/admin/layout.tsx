@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden">
         <Link href="/admin" className="text-base font-semibold tracking-tight">
-          Bazaar Admin
+          Mirage Admin
         </Link>
         <AdminNav variant="mobile" />
       </header>
@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="hidden w-60 shrink-0 border-r border-border md:block">
           <div className="sticky top-0 flex h-dvh flex-col px-4 py-6">
             <Link href="/admin" className="text-lg font-semibold tracking-tight">
-              Bazaar Admin
+              Mirage Admin
             </Link>
             <div className="mt-8 flex-1">
               <AdminNav variant="desktop" />

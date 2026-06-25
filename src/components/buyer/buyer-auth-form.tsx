@@ -105,10 +105,14 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
             autoComplete="email"
             placeholder="you@example.com"
             className="h-12 text-base"
+            aria-invalid={!!signInForm.formState.errors.email}
+            aria-describedby={
+              signInForm.formState.errors.email ? "email-error" : undefined
+            }
             {...signInForm.register("email")}
           />
           {signInForm.formState.errors.email && (
-            <p className="text-xs text-destructive">
+            <p id="email-error" className="text-xs text-destructive">
               {signInForm.formState.errors.email.message}
             </p>
           )}
@@ -120,15 +124,23 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
             type="password"
             autoComplete="current-password"
             className="h-12 text-base"
+            aria-invalid={!!signInForm.formState.errors.password}
+            aria-describedby={
+              signInForm.formState.errors.password ? "password-error" : undefined
+            }
             {...signInForm.register("password")}
           />
           {signInForm.formState.errors.password && (
-            <p className="text-xs text-destructive">
+            <p id="password-error" className="text-xs text-destructive">
               {signInForm.formState.errors.password.message}
             </p>
           )}
         </div>
-        {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+        {serverError && (
+          <p role="alert" className="text-sm text-destructive">
+            {serverError}
+          </p>
+        )}
         <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
@@ -138,7 +150,7 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
             setMode("register");
             setServerError(undefined);
           }}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="rounded-sm text-xs font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           New to Mirage? Create an account
         </button>
@@ -168,10 +180,14 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
           autoComplete="email"
           placeholder="you@example.com"
           className="h-12 text-base"
+          aria-invalid={!!registerForm.formState.errors.email}
+          aria-describedby={
+            registerForm.formState.errors.email ? "reg-email-error" : undefined
+          }
           {...registerForm.register("email")}
         />
         {registerForm.formState.errors.email && (
-          <p className="text-xs text-destructive">
+          <p id="reg-email-error" className="text-xs text-destructive">
             {registerForm.formState.errors.email.message}
           </p>
         )}
@@ -183,10 +199,16 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
           type="password"
           autoComplete="new-password"
           className="h-12 text-base"
+          aria-invalid={!!registerForm.formState.errors.password}
+          aria-describedby={
+            registerForm.formState.errors.password
+              ? "reg-password-error"
+              : undefined
+          }
           {...registerForm.register("password")}
         />
         {registerForm.formState.errors.password && (
-          <p className="text-xs text-destructive">
+          <p id="reg-password-error" className="text-xs text-destructive">
             {registerForm.formState.errors.password.message}
           </p>
         )}
@@ -198,15 +220,25 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
           type="password"
           autoComplete="new-password"
           className="h-12 text-base"
+          aria-invalid={!!registerForm.formState.errors.confirm}
+          aria-describedby={
+            registerForm.formState.errors.confirm
+              ? "reg-confirm-error"
+              : undefined
+          }
           {...registerForm.register("confirm")}
         />
         {registerForm.formState.errors.confirm && (
-          <p className="text-xs text-destructive">
+          <p id="reg-confirm-error" className="text-xs text-destructive">
             {registerForm.formState.errors.confirm.message}
           </p>
         )}
       </div>
-      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+      {serverError && (
+        <p role="alert" className="text-sm text-destructive">
+          {serverError}
+        </p>
+      )}
       <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>
@@ -216,7 +248,7 @@ export function BuyerAuthForm({ callbackUrl }: { callbackUrl: string }) {
           setMode("signin");
           setServerError(undefined);
         }}
-        className="text-xs text-muted-foreground hover:text-foreground"
+        className="rounded-sm text-xs font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         Already have an account? Sign in
       </button>

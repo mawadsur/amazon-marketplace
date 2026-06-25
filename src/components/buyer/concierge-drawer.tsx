@@ -381,7 +381,7 @@ export function ConciergeDrawer() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-[#611A33] disabled:opacity-50"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-[#9D174D] disabled:opacity-50"
               aria-label="Send"
             >
               <Send className="h-4 w-4" />

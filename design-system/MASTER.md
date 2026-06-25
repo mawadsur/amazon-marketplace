@@ -55,7 +55,12 @@ Effects: soft cards (`rounded-md`, subtle `shadow-sm` on hover), generous whites
 - Pages query the DB and are `force-dynamic`; don't add server `auth()`+DB reads to components used on static-ish catalog pages (the cart badge is a client fetch for this reason).
 - Run `npm run typecheck` + `npm run build` before declaring done. Local dev: Docker `mirage-pg` + `.env`, `npm run dev` on :3000.
 
-## Asset status (filled in as generation completes)
+## Asset status (generated 2026-06-24 via Higgsfield MCP)
 
-- hero try-on video: <pending — Higgsfield job started this session; save to public/redesign/hero-tryon.mp4>
-- category/hero images: <pending>
+- hero try-on video: ✅ `public/redesign/hero-tryon.mp4` (Seedance 2.0, 1080p 16:9, 5s, silent loop;
+  start frame = the hero still). Poster: `public/redesign/hero-tryon-poster.jpg`. Wired into the
+  home hero (`page.tsx`) via a plain `<video autoPlay muted loop playsInline poster>`.
+- category tiles: ✅ `public/redesign/category-{sarees,lehenga,jewelry,bridal,accessories}.jpg`
+  (soul_2 / nano_banana_pro, 3:4). Used by the home "What are you looking for?" discovery grid.
+- All assets converted PNG→optimized JPEG (~2.5 MB total, down from ~16 MB). `category-bridal.jpg`
+  doubles as the OG/Twitter share image (`layout.tsx`).

@@ -27,7 +27,7 @@ export type ProductCardProduct = {
   ratingCount?: number;
 };
 
-const FALLBACK_IMAGE = "https://placehold.co/600x600/png?text=No+Image";
+const FALLBACK_IMAGE = "https://placehold.co/600x600/F4E9E1/BE185D/png?text=No+Image";
 
 /** Deterministic stub rating from the slug — used for grid surfaces that
  * don't ship the live aggregate. Stable across renders so SSR + hover state
@@ -65,8 +65,8 @@ export function StarRow({
         {[0, 1, 2, 3, 4].map((i) => (
           <Star
             key={i}
-            className={`${px} ${
-              i < full ? "fill-current text-amber-400" : "fill-current text-border"
+            className={`${px} fill-current ${
+              i < full ? "amzn-star" : "text-border"
             }`}
             aria-hidden
           />
@@ -102,11 +102,11 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group block cursor-pointer"
+      className="group block cursor-pointer overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm bg-muted">
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
         {badgeLabel ? (
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-sm bg-card/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-card/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary shadow-sm">
             {badgeLabel}
           </span>
         ) : null}
@@ -115,19 +115,19 @@ export function ProductCard({ product }: { product: ProductCardProduct }) {
           src={cover}
           alt={product.title}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
       </div>
 
-      <div className="mt-3 space-y-1">
+      <div className="space-y-1 p-3">
         <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
           {product.title}
         </h3>
 
         <StarRow avg={avg} count={count} />
 
-        <div className="flex items-baseline gap-2 pt-0.5">
-          <span className="font-display text-lg font-semibold tabular-nums leading-none text-foreground">
+        <div className="flex items-baseline gap-2 pt-1">
+          <span className="font-display text-xl font-semibold tabular-nums leading-none text-foreground">
             ${dollars}
             <span className="text-sm">.{cents}</span>
           </span>
